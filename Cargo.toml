@@ -1,0 +1,8 @@
+[package]
+name = "dictcc"
+version = "0.0.0"
+authors = ["Mathias Lengler", "Kevin Deggelmann"]
+license = "GPL-3.0"
+description = "Rust API for use of dict.cc translation data."
+
+[dependencies]
