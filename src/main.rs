@@ -10,9 +10,32 @@ fn parse_test() -> Result<(), Box<Error>> {
         .comment(Some(b'#'))
         .from_path("../database/dictcc_DE-EN.txt")?;
 
-    for record in rdr.records().skip(1000).take(100) {
-        let record = record?;
-        eprintln!("record = {:?}", record);
+    for (i, record) in rdr.records().enumerate() {
+        let record = match record {
+            Ok(record) => record,
+            Err(err) => {
+                let abort = {
+                    let kind: &csv::ErrorKind = err.kind();
+
+                    match *kind {
+                        csv::ErrorKind::UnequalLengths { .. } => false,
+                        _ => true,
+                    }
+                };
+
+
+                if abort {
+                    return Err(Box::new(err));
+                } else {
+                    eprintln!("Dictionary Parsing Error: {}", err);
+                    continue;
+                }
+            }
+        };
+
+        if i % 1000 == 0 {
+            println!("{:?}", record);
+        }
     }
 
     Ok(())
