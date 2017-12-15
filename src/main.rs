@@ -10,6 +10,8 @@ fn parse_test() -> Result<(), Box<Error>> {
         .comment(Some(b'#'))
         .from_path("../database/dictcc_DE-EN.txt")?;
 
+    let mut vec = vec![];
+
     for (i, record) in rdr.records().enumerate() {
         let record = match record {
             Ok(record) => record,
@@ -34,9 +36,13 @@ fn parse_test() -> Result<(), Box<Error>> {
         };
 
         if i % 1000 == 0 {
-            println!("{:?}", record);
+            //println!("{:?}", record);
         }
+
+        vec.push(record);
     }
+
+    std::io::stdin().read_line(&mut String::new());
 
     Ok(())
 }
