@@ -38,8 +38,29 @@ pub enum Language {
 }
 
 pub enum Gender {
-
+    Feminine,
+    Masculine,
+    Neuter,
+    Plural,
+    Singular,
 }
+
+impl FromStr for Gender {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "f" => Feminine,
+            "m" => Masculine,
+            "n" => Neuter,
+            "pl" => Plural,
+            "sg" => Singular,
+            // FIXME error handling
+            _ => return Err(())
+        })
+    }
+}
+
 
 pub enum WordClass {
     Adjective,
