@@ -1,5 +1,9 @@
 extern crate dictcc;
+extern crate failure;
 
 fn main() {
-    dictcc::parse::parse_test().unwrap();
+    if let Err(err) = dictcc::parse::parse_test() {
+        println!("{}", err);
+        println!("{:?}", err);
+    }
 }

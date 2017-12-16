@@ -1,5 +1,8 @@
 use std::str::FromStr;
 
+use error::{DictError};
+use failure::Backtrace;
+
 pub struct DictEntry {
     pub source: DictWord,
     pub translation: DictWord,
@@ -46,17 +49,18 @@ pub enum Gender {
 }
 
 impl FromStr for Gender {
-    type Err = ();
+    type Err = DictError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::Gender::*;
+
         Ok(match s {
             "f" => Feminine,
             "m" => Masculine,
             "n" => Neuter,
             "pl" => Plural,
             "sg" => Singular,
-            // FIXME error handling
-            _ => return Err(())
+            unknown => Err(DictError::UnknownGender { name: unknown.to_string(), backtrace: Backtrace::new() })?
         })
     }
 }
@@ -78,7 +82,7 @@ pub enum WordClass {
 }
 
 impl FromStr for WordClass {
-    type Err = ();
+    type Err = DictError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use self::WordClass::*;
@@ -95,8 +99,7 @@ impl FromStr for WordClass {
             "prefix" => Prefix,
             "suffix" => Suffix,
             "noun" => Noun,
-            // FIXME error handling
-            _ => return Err(()),
+            unknown => return Err(DictError::UnknownWordClass { word_class: unknown.to_string(), backtrace: Backtrace::new() }),
         })
     }
 }
