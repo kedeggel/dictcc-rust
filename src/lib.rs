@@ -1,51 +1,87 @@
 extern crate csv;
 
-use std::error::Error;
+use std::str::FromStr;
 
+pub mod parse;
 
-pub fn parse_test() -> Result<(), Box<Error>> {
-    let mut rdr = csv::ReaderBuilder::new()
-        .delimiter(b'\t')
-        .has_headers(false)
-        .quoting(false)
-        .comment(Some(b'#'))
-        .from_path("../database/dictcc_DE-EN.txt")?;
+pub struct DictEntry {
+    pub source: DictWord,
+    pub translation: DictWord,
+    pub word_class: WordClass,
+}
 
-    let mut vec = vec![];
+pub struct DictWord {
+    pub language: Language,
 
-    for (i, record) in rdr.records().enumerate() {
-        let record = match record {
-            Ok(record) => record,
-            Err(err) => {
-                let abort = {
-                    let kind: &csv::ErrorKind = err.kind();
+    /// # Syntax:
+    /// `<foo>`
+    /// `<foo, bar>`
+    pub acronyms: Vec<DictWord>,
 
-                    match *kind {
-                        csv::ErrorKind::UnequalLengths { .. } => false,
-                        _ => true,
-                    }
-                };
+    /// # Syntax:
+    /// `{f}`
+    /// `{m}`
+    /// `{n}`
+    /// `{pl}`
+    /// `{sg}`
+    pub gender: Option<Gender>,
 
+    /// The word with comments
+    pub word: String,
 
-                if abort {
-                    return Err(Box::new(err));
-                } else {
-                    eprintln!("Dictionary Parsing Error: {}", err);
-                    continue;
-                }
-            }
-        };
+    // TODO: evaluate if needed
+    /// The word stripped of comments for sorting
+    pub word_without_comments: String,
+}
 
-        if i % 1000 == 0 {
-            println!("{:?}", record);
-        }
+pub enum Language {
+    DE,
+    EN,
+    // ...
+    Other { language_code: String },
+}
 
-        vec.push(record);
+pub enum Gender {
+
+}
+
+pub enum WordClass {
+    Adjective,
+    Adverb,
+    Past,
+    Verb,
+    PresentParticiple,
+    Preposition,
+    Conjunction,
+    Pronoun,
+    Prefix,
+    Suffix,
+    Noun,
+    Undefined,
+}
+
+impl FromStr for WordClass {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use WordClass::*;
+
+        Ok(match s {
+            "adj" => Adjective,
+            "adv" => Adverb,
+            "past-p" => Past,
+            "verb" => Verb,
+            "pres-p" => PresentParticiple,
+            "prep" => Preposition,
+            "conj" => Conjunction,
+            "pron" => Pronoun,
+            "prefix" => Prefix,
+            "suffix" => Suffix,
+            "noun" => Noun,
+            // FIXME error handling
+            _ => return Err(()),
+        })
     }
-
-    eprintln!("vec.len() = {:?}", vec.len());
-
-    Ok(())
 }
 
 #[cfg(test)]
