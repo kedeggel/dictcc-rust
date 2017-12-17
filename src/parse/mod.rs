@@ -1,6 +1,7 @@
 pub mod html;
-pub mod csv;
+pub mod raw_csv;
 pub mod debug;
+pub mod brackets;
 
 use std;
 use error::ParseDictionaryError;

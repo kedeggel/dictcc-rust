@@ -1,24 +1,29 @@
-use std::path::Path;
-use std::fs::File;
+extern crate csv;
 
 use super::ParseResult;
-use error::ParseDictionaryError;
-use super::csv::{get_csv_reader_from_path, incomplete_records_filter};
+
+use super::raw_csv::{get_csv_reader_from_path, incomplete_records_filter};
+use super::html::HtmlDecodedDictEntry;
+
+use super::raw_csv::RawDictEntry;
 
 pub fn parse_test() -> ParseResult<()> {
     let mut reader = get_csv_reader_from_path("../database/dictcc_DE-EN.txt")?;
 
     let records = reader
-        .records()
+        .deserialize()
         .filter(incomplete_records_filter)
-        .enumerate();
+        .enumerate().take(10);
 
     for (i, record) in records {
-        let record = record?;
+        let raw_entry: RawDictEntry = record?;
 
-        if i % 10000 == 0 {
-            eprintln!("record = {:?}", record);
-        }
+        let html_decoded_entry = HtmlDecodedDictEntry::try_from(&raw_entry)?;
+
+        eprintln!("raw_entry = {:?}", raw_entry);
+        eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
+
+        if i % 10000 == 0 {}
     }
 
     Ok(())

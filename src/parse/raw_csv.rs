@@ -6,7 +6,14 @@ use std::fs::File;
 use super::ParseResult;
 use error::ParseDictionaryError;
 
-pub fn incomplete_records_filter(record: &Result<csv::StringRecord, csv::Error>) -> bool {
+#[derive(Debug,Deserialize)]
+pub struct RawDictEntry {
+    pub source: String,
+    pub translation: String,
+    pub word_class: String,
+}
+
+pub fn incomplete_records_filter(record: &Result<RawDictEntry, csv::Error>) -> bool {
     match *record {
         Ok(_) => true,
         Err(ref err) => {
