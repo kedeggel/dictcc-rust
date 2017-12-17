@@ -1,5 +1,6 @@
 extern crate csv;
 extern crate failure;
+extern crate htmlescape;
 
 use std::io;
 
@@ -42,11 +43,20 @@ pub enum ParseDictionaryError {
     IncompleteEntry(#[cause] csv::Error),
 
     #[fail(display = "Could not parse csv: {}", _0)]
-    CsvParsing(#[cause] csv::Error)
+    CsvParse(#[cause] csv::Error),
+
+    #[fail(display = "Could not decode HTML character references: {:?}", _0)]
+    HtmlDecode(htmlescape::DecodeErr),
 }
 
 impl From<csv::Error> for ParseDictionaryError {
     fn from(err: csv::Error) -> Self {
-        ParseDictionaryError::CsvParsing(err)
+        ParseDictionaryError::CsvParse(err)
+    }
+}
+
+impl From<htmlescape::DecodeErr> for ParseDictionaryError {
+    fn from(err: htmlescape::DecodeErr) -> Self {
+        ParseDictionaryError::HtmlDecode(err)
     }
 }

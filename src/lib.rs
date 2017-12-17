@@ -1,5 +1,6 @@
 extern crate csv;
 #[macro_use] extern crate failure;
+extern crate htmlescape;
 
 pub mod parse;
 pub mod dict;
