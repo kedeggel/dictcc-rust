@@ -20,7 +20,6 @@ pub fn parse_test() -> ParseResult<()> {
 
         let html_decoded_entry = HtmlDecodedDictEntry::try_from(&raw_entry)?;
 
-        eprintln!("raw_entry = {:?}", raw_entry);
         eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
 
         if i % 10000 == 0 {}
