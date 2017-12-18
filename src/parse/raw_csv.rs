@@ -3,7 +3,7 @@ extern crate csv;
 use std::path::Path;
 use std::fs::File;
 
-use super::ParseResult;
+use parse::ParseResult;
 use error::ParseDictionaryError;
 
 #[derive(Debug,Deserialize)]

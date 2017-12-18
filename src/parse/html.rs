@@ -1,7 +1,7 @@
 extern crate htmlescape;
 
-use super::ParseResult;
-use super::raw_csv::RawDictEntry;
+use parse::ParseResult;
+use parse::raw_csv::RawDictEntry;
 
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {
