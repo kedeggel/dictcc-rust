@@ -1,11 +1,10 @@
 extern crate csv;
+extern crate failure;
 
 use parse::ParseResult;
-
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter};
 use parse::html::HtmlDecodedDictEntry;
 use parse::word_ast::WordAST;
-
 use parse::raw_csv::RawDictEntry;
 
 pub fn parse_test() -> ParseResult<()> {
@@ -14,20 +13,22 @@ pub fn parse_test() -> ParseResult<()> {
     let records = reader
         .deserialize()
         .filter(incomplete_records_filter)
-        .enumerate().take(10);
+        .enumerate();
 
     for (i, record) in records {
         let raw_entry: RawDictEntry = record?;
 
-        let html_decoded_entry = HtmlDecodedDictEntry::try_from(&raw_entry)?;
+        let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
 
-        eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
+        let word_ast = WordAST::from(&html_decoded_entry);
 
-        let word_ast = WordAST::try_from(&html_decoded_entry)?;
 
-        eprintln!("word_ast = {:?}", word_ast);
-
-        if i % 10000 == 0 {}
+        if i == 0 {
+            eprintln!("i = {:?}", i);
+            eprintln!("raw_entry = {:?}", raw_entry);
+            eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
+            eprintln!("word_ast = {:?}", word_ast);
+        }
     }
 
     Ok(())

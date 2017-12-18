@@ -1,8 +1,8 @@
 extern crate htmlescape;
 
-use parse::ParseResult;
 use parse::raw_csv::RawDictEntry;
 
+// TODO: use &str to avoid cloning
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {
     pub source: String,
@@ -10,16 +10,24 @@ pub struct HtmlDecodedDictEntry {
     pub word_class: String,
 }
 
-impl HtmlDecodedDictEntry {
-    pub fn try_from(raw: &RawDictEntry) -> ParseResult<HtmlDecodedDictEntry> {
-        Ok(HtmlDecodedDictEntry {
-            source: html_decode(&raw.source)?,
-            translation: html_decode(&raw.translation)?,
+impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
+    fn from(raw: &RawDictEntry) -> Self {
+        HtmlDecodedDictEntry {
+            source: html_decode_with_fallback(&raw.source),
+            translation: html_decode_with_fallback(&raw.translation),
             word_class: raw.word_class.clone(),
-        })
+        }
     }
 }
 
-fn html_decode(input: &str) -> ParseResult<String> {
-    Ok(htmlescape::decode_html(input)?)
+fn html_decode_with_fallback(input: &str) -> String {
+    match htmlescape::decode_html(input) {
+        Ok(decoded) => decoded,
+        Err(err) => {
+            // FIXME: log
+            eprintln!("Using HTML-Decode fallback for {}: {:?}", input, err);
+            input.to_string()
+        }
+    }
+
 }

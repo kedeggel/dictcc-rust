@@ -5,7 +5,7 @@ extern crate nom;
 
 use std::io;
 
-use failure::Backtrace;
+use failure::{Backtrace, Context};
 
 #[derive(Debug, Fail)]
 pub enum DictError {
@@ -49,8 +49,14 @@ pub enum ParseDictionaryError {
     #[fail(display = "Could not decode HTML character references: {:?}", _0)]
     HtmlDecode(htmlescape::DecodeErr),
 
-    #[fail(display = "Could not parse word: {:?}", _0)]
-    WordASTParse(nom::IError),
+    #[fail(display = "Could not parse {}: {:?}", word, cause)]
+    WordASTParse{
+        cause: nom::IError,
+        word: String
+    },
+
+    #[fail(display = "Parse error with context: {:?}", _0)]
+    Context(#[cause] Context<String>),
 }
 
 impl From<csv::Error> for ParseDictionaryError {
@@ -65,8 +71,8 @@ impl From<htmlescape::DecodeErr> for ParseDictionaryError {
     }
 }
 
-impl From<nom::IError> for ParseDictionaryError {
-    fn from(err: nom::IError) -> Self {
-        ParseDictionaryError::WordASTParse(err)
+impl From<Context<String>> for ParseDictionaryError {
+    fn from(context: Context<String>) -> Self {
+        ParseDictionaryError::Context(context)
     }
 }

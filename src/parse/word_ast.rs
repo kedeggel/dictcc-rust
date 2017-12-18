@@ -1,5 +1,7 @@
 extern crate nom;
 
+use error::ParseDictionaryError;
+
 use parse::ParseResult;
 use parse::html::HtmlDecodedDictEntry;
 
@@ -33,7 +35,21 @@ pub enum WordNode<'a> {
 impl<'a> WordNode<'a> {
     pub fn try_from(s: &str) -> ParseResult<Vec<WordNode>> {
         let nom_res: nom::IResult<_, _> = entry(s);
-        Ok(nom_res.to_full_result()?)
+        Ok(nom_res.to_full_result().map_err(|err| {
+            ParseDictionaryError::WordASTParse { cause: err, word: s.to_string() }
+        })?)
+    }
+
+    fn with_fallback_from(s: &str) -> Vec<WordNode> {
+        match WordNode::try_from(s) {
+            Ok(node) => node,
+            Err(err) => {
+                // FIXME: log
+                eprintln!("Using WordNode fallback: {}", err);
+
+                vec![WordNode::Word(s)]
+            }
+        }
     }
 }
 
@@ -52,8 +68,18 @@ impl<'a> WordAST<'a> {
             word_class: &entry.word_class,
         })
     }
-
 }
+
+impl<'a> From<&'a HtmlDecodedDictEntry> for WordAST<'a> {
+    fn from(entry: &'a HtmlDecodedDictEntry) -> WordAST<'a> {
+        WordAST {
+            source: WordNode::with_fallback_from(&entry.source),
+            translation: WordNode::with_fallback_from(&entry.translation),
+            word_class: &entry.word_class,
+        }
+    }
+}
+
 
 named!(csv<&str, Vec<&str> >, separated_list_complete!(
     tag_s!(", "),

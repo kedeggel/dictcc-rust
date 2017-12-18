@@ -28,7 +28,6 @@ pub struct DictWord {
     /// The word with comments
     pub word: String,
 
-    // TODO: evaluate if needed
     /// The word stripped of comments for sorting
     pub word_without_comments: String,
 }
