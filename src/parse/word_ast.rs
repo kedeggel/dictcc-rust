@@ -44,8 +44,7 @@ impl<'a> WordNode<'a> {
         match WordNode::try_from(s) {
             Ok(node) => node,
             Err(err) => {
-                // FIXME: log
-                eprintln!("Using WordNode fallback: {}", err);
+                info!("Using WordNode fallback: {}", err);
 
                 vec![WordNode::Word(s)]
             }

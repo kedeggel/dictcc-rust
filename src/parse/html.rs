@@ -24,8 +24,7 @@ fn html_decode_with_fallback(input: &str) -> String {
     match htmlescape::decode_html(input) {
         Ok(decoded) => decoded,
         Err(err) => {
-            // FIXME: log
-            eprintln!("Using HTML-Decode fallback for {}: {:?}", input, err);
+            info!("Using HTML-Decode fallback for {}: {:?}", input, err);
             input.to_string()
         }
     }

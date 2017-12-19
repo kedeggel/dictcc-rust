@@ -19,8 +19,7 @@ pub fn incomplete_records_filter(record: &Result<RawDictEntry, csv::Error>) -> b
         Err(ref err) => {
             match *err.kind() {
                 csv::ErrorKind::UnequalLengths { .. } => {
-                    // FIXME: log
-                    eprintln!("Drop incomplete entry: {:?}", err);
+                    info!("Drop incomplete entry: {:?}", err);
                     false
                 }
                 _ => true,
