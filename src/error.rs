@@ -7,10 +7,10 @@ use std::io;
 
 use failure::{Backtrace, Context};
 
+pub type DictResult<T> = ::std::result::Result<T, DictError>;
+
 #[derive(Debug, Fail)]
 pub enum DictError {
-    // Own errors
-
     #[fail(display = "Unknown gender name: {}", name)]
     UnknownGender {
         name: String,
@@ -22,18 +22,10 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
-    #[fail(display = "Could not parse dictionary: {}", _0)]
-    ParseDictionary(#[cause] ParseDictionaryError),
 
-    // Foreign errors to simply pass through
     #[fail(display = "{}", _0)]
     Io(#[cause] io::Error),
-}
 
-
-// Error type for module parse
-#[derive(Debug, Fail)]
-pub enum ParseDictionaryError {
     #[fail(display = "Could not open dictionary file at \"{}\": {}", path, cause)]
     FileOpen {
         path: String,
@@ -59,20 +51,20 @@ pub enum ParseDictionaryError {
     Context(#[cause] Context<String>),
 }
 
-impl From<csv::Error> for ParseDictionaryError {
+impl From<csv::Error> for DictError {
     fn from(err: csv::Error) -> Self {
-        ParseDictionaryError::CsvParse(err)
+        DictError::CsvParse(err)
     }
 }
 
-impl From<htmlescape::DecodeErr> for ParseDictionaryError {
+impl From<htmlescape::DecodeErr> for DictError {
     fn from(err: htmlescape::DecodeErr) -> Self {
-        ParseDictionaryError::HtmlDecode(err)
+        DictError::HtmlDecode(err)
     }
 }
 
-impl From<Context<String>> for ParseDictionaryError {
+impl From<Context<String>> for DictError {
     fn from(context: Context<String>) -> Self {
-        ParseDictionaryError::Context(context)
+        DictError::Context(context)
     }
 }

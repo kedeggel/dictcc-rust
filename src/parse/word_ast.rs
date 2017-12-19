@@ -1,46 +1,33 @@
 extern crate nom;
 
-use error::ParseDictionaryError;
-
-use parse::ParseResult;
+use error::DictError;
+use error::DictResult;
 use parse::html::HtmlDecodedDictEntry;
 
 /// Parsing AST node
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum WordNode<'a> {
     /// text at root
     Word(&'a str),
     /// abbreviations/acronyms
-    ///
-    /// sorting: false
-    /// keyword: true
-    /// multiple: true
     Angle(Vec<&'a str>),
     /// optional parts
-    ///
-    /// sorting: true
-    /// keyword: true
-    /// multiple: false
     Round(&'a str),
     /// visible comments
-    ///
-    /// sorting: false
-    /// keyword: false
-    /// multiple: false
     Square(&'a str),
     /// gender tags
     Curly(&'a str),
 }
 
 impl<'a> WordNode<'a> {
-    pub fn try_from(s: &str) -> ParseResult<Vec<WordNode>> {
+    pub fn try_from(s: &str) -> DictResult<Vec<WordNode>> {
         let nom_res: nom::IResult<_, _> = entry(s);
         Ok(nom_res.to_full_result().map_err(|err| {
-            ParseDictionaryError::WordASTParse { cause: err, word: s.to_string() }
+            DictError::WordASTParse { cause: err, word: s.to_string() }
         })?)
     }
 
-    fn with_fallback_from(s: &str) -> Vec<WordNode> {
+    pub fn with_fallback_from(s: &str) -> Vec<WordNode> {
         match WordNode::try_from(s) {
             Ok(node) => node,
             Err(err) => {
@@ -50,9 +37,103 @@ impl<'a> WordNode<'a> {
             }
         }
     }
+
+    // FIXME: handle multiple comments/acronyms/gender blocks consistently
+
+    pub fn build_comment_string(ast: &[Self]) -> String {
+        use self::WordNode::*;
+
+        ast.iter()
+            .filter_map(|node| {
+                match *node {
+                    Square(ref s) => Some(s.to_string()),
+                    _ => None,
+                }
+            }).collect()
+    }
+
+    pub fn build_acronyms_vec(ast: &[Self]) -> Vec<String> {
+        use self::WordNode::*;
+
+        ast.iter()
+            .filter_map(|node| {
+                match *node {
+                    Angle(ref vec_str) => Some(vec_str),
+                    _ => None,
+                }
+            })
+            .flat_map(|foo| foo.iter().map(|s| s.to_string()))
+            .collect()
+    }
+
+    pub fn build_gender_tag_string(ast: &[Self]) -> Option<String> {
+        use self::WordNode::*;
+
+        ast.iter().filter_map(|node| {
+            match *node {
+                Curly(ref s) => Some(s.to_string()),
+                _ => None,
+            }
+        }).next()
+    }
+
+    pub fn build_word_with_optional_parts(ast: &[Self]) -> String {
+        use self::WordNode::*;
+
+        ast.iter().filter_map(|node| {
+            match *node {
+                ref node @ Word(_) => {
+                    Some(node.to_string())
+                }
+                ref node @ Round(_) => {
+                    Some(node.to_string())
+                }
+                _ => None,
+            }
+        }).collect::<Vec<_>>().join(" ")
+    }
+
+    pub fn build_word_without_optional_parts(ast: &[Self]) -> String {
+        use self::WordNode::*;
+
+        ast.iter().filter_map(|node| {
+            match *node {
+                ref node @ Word(_) => {
+                    Some(node.to_string())
+                }
+                _ => None,
+            }
+        }).collect::<Vec<_>>().join(" ")
+    }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+use std::fmt;
+
+impl<'a> fmt::Display for WordNode<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::WordNode::*;
+
+        match *self {
+            Word(ref s) => {
+                write!(f, "{}", s)
+            }
+            Angle(ref vec_s) => {
+                write!(f, "<{}>", vec_s.join(", "))
+            }
+            Round(ref s) => {
+                write!(f, "({})", s)
+            }
+            Square(ref s) => {
+                write!(f, "[{}]", s)
+            }
+            Curly(ref s) => {
+                write!(f, "{{{}}}", s)
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct WordAST<'a> {
     pub source: Vec<WordNode<'a>>,
     pub translation: Vec<WordNode<'a>>,
@@ -60,7 +141,7 @@ pub struct WordAST<'a> {
 }
 
 impl<'a> WordAST<'a> {
-    pub fn try_from(entry: &'a HtmlDecodedDictEntry) -> ParseResult<WordAST<'a>> {
+    pub fn try_from(entry: &'a HtmlDecodedDictEntry) -> DictResult<WordAST<'a>> {
         Ok(WordAST {
             source: WordNode::try_from(&entry.source)?,
             translation: WordNode::try_from(&entry.translation)?,
@@ -113,13 +194,13 @@ mod tests {
     use nom::IResult::*;
 
     #[test]
-    fn test_entry() {
-        let input = "(comment) word {f} [Foo.] <foo, bar, baz>";
+    fn test_word_node() {
+        let input = "(optional) word {f} [comment] <foo, bar, baz>";
         let expected = vec![
-            WordNode::Round("comment"),
+            WordNode::Round("optional"),
             WordNode::Word("word"),
             WordNode::Curly("f"),
-            WordNode::Square("Foo."),
+            WordNode::Square("comment"),
             WordNode::Angle(vec![
                 "foo",
                 "bar",
@@ -128,6 +209,17 @@ mod tests {
         ];
 
         assert_eq!(Done("", expected), entry(input));
+    }
+
+    #[test]
+    fn test_word_node_display() {
+        assert_eq!("foo", WordNode::Word("foo").to_string());
+        assert_eq!("<>", WordNode::Angle(vec![]).to_string());
+        assert_eq!("<foo>", WordNode::Angle(vec!["foo"]).to_string());
+        assert_eq!("<foo, bar>", WordNode::Angle(vec!["foo", "bar"]).to_string());
+        assert_eq!("(foo)", WordNode::Round("foo").to_string());
+        assert_eq!("[foo]", WordNode::Square("foo").to_string());
+        assert_eq!("{foo}", WordNode::Curly("foo").to_string());
     }
 
     #[test]

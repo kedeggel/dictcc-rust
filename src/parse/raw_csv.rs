@@ -3,8 +3,8 @@ extern crate csv;
 use std::path::Path;
 use std::fs::File;
 
-use parse::ParseResult;
-use error::ParseDictionaryError;
+use error::DictResult;
+use error::DictError;
 
 #[derive(Debug,Deserialize)]
 pub struct RawDictEntry {
@@ -28,14 +28,14 @@ pub fn incomplete_records_filter(record: &Result<RawDictEntry, csv::Error>) -> b
     }
 }
 
-pub fn get_csv_reader_from_path<P: AsRef<Path>>(path: P) -> ParseResult<csv::Reader<File>> {
+pub fn get_csv_reader_from_path<P: AsRef<Path>>(path: P) -> DictResult<csv::Reader<File>> {
     csv::ReaderBuilder::new()
         .delimiter(b'\t')
         .has_headers(false)
         .quoting(false)
         .comment(Some(b'#'))
         .from_path(&path)
-        .map_err(|err| ParseDictionaryError::FileOpen {
+        .map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: err,
         })

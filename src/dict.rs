@@ -1,21 +1,41 @@
 use std::str::FromStr;
 
-use error::{DictError};
+use error::{DictError, DictResult};
 use failure::Backtrace;
 
+use parse::word_ast::{WordNode, WordAST};
+
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
     pub source: DictWord,
     pub translation: DictWord,
-    pub word_class: WordClass,
+    // TODO: Vec<WordClass> + parsing
+    pub word_class: Option<WordClass>,
 }
 
+impl DictEntry {
+    pub fn try_from(ast: &WordAST) -> DictResult<Self> {
+        Ok(DictEntry {
+            source: DictWord::try_from(&ast.source)?,
+            translation: DictWord::try_from(&ast.translation)?,
+            word_class: WordClass::try_from(ast.word_class)?,
+        })
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictWord {
-    pub language: Language,
+    // FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
+    //pub language: Language,
 
     /// # Syntax:
     /// `<foo>`
     /// `<foo, bar>`
-    pub acronyms: Vec<DictWord>,
+    ///
+    /// # Indexing
+    /// sorting: false
+    /// keyword: true
+    pub acronyms: Vec<String>,
 
     /// # Syntax:
     /// `{f}`
@@ -23,15 +43,54 @@ pub struct DictWord {
     /// `{n}`
     /// `{pl}`
     /// `{sg}`
+    ///
+    /// # Indexing
+    /// sorting: false
+    /// keyword: false
     pub gender: Option<Gender>,
 
-    /// The word with comments
-    pub word: String,
+    /// # Syntax:
+    /// `[foo]`
+    ///
+    /// # Indexing
+    /// sorting: false
+    /// keyword: false
+    pub comment: String,
 
-    /// The word stripped of comments for sorting
-    pub word_without_comments: String,
+    /// The word with optional parts
+    ///
+    /// # Syntax:
+    /// `(a) foo`
+    ///
+    /// sorting: true
+    /// keyword: true
+    pub complete_word: String,
+
+    /// The word without optional parts
+    ///
+    /// # Syntax:
+    /// `foo`
+    pub plain_word: String,
 }
 
+impl DictWord {
+    fn try_from<'a>(ast: &[WordNode<'a>]) -> Result<Self, DictError> {
+        let gender = match WordNode::build_gender_tag_string(&ast) {
+            Some(gender_string) => Some(gender_string.parse()?),
+            None => None,
+        };
+
+        Ok(DictWord {
+            acronyms: WordNode::build_acronyms_vec(&ast),
+            gender,
+            comment: WordNode::build_comment_string(&ast),
+            complete_word: WordNode::build_word_with_optional_parts(&ast),
+            plain_word: WordNode::build_word_without_optional_parts(&ast),
+        })
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Language {
     DE,
     EN,
@@ -39,6 +98,7 @@ pub enum Language {
     Other { language_code: String },
 }
 
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
     Feminine,
     Masculine,
@@ -64,7 +124,7 @@ impl FromStr for Gender {
     }
 }
 
-
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum WordClass {
     Adjective,
     Adverb,
@@ -76,8 +136,16 @@ pub enum WordClass {
     Pronoun,
     Prefix,
     Suffix,
-    Noun,
-    Undefined,
+    Noun
+}
+
+impl WordClass {
+    pub fn try_from(s: &str) -> DictResult<Option<Self>> {
+        match s {
+            "" => Ok(None),
+            s => Ok(Some(s.parse()?))
+        }
+    }
 }
 
 impl FromStr for WordClass {
