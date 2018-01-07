@@ -117,8 +117,8 @@ impl FromStr for Gender {
             "f" => Feminine,
             "m" => Masculine,
             "n" => Neuter,
-            "pl" => Plural,
-            "sg" => Singular,
+            "pl"|"pl." => Plural,
+            "sg"|"sg." => Singular,
             unknown => Err(DictError::UnknownGender { name: unknown.to_string(), backtrace: Backtrace::new() })?
         })
     }
