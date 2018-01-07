@@ -40,9 +40,6 @@ pub fn parse_test() -> DictResult<()> {
                 eprintln!("Error {}: {},\n index: {}, word_ast {:?}", error_counter, err, i, word_ast);
             }
         };
-
-
-
     }
 
 
