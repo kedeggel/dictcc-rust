@@ -137,7 +137,7 @@ impl<'a> fmt::Display for WordNode<'a> {
 pub struct WordAST<'a> {
     pub source: Vec<WordNode<'a>>,
     pub translation: Vec<WordNode<'a>>,
-    pub word_class: &'a str,
+    pub word_classes: &'a str,
 }
 
 impl<'a> WordAST<'a> {
@@ -145,7 +145,7 @@ impl<'a> WordAST<'a> {
         Ok(WordAST {
             source: WordNode::try_from(&entry.source)?,
             translation: WordNode::try_from(&entry.translation)?,
-            word_class: &entry.word_class,
+            word_classes: &entry.word_classes,
         })
     }
 }
@@ -155,7 +155,7 @@ impl<'a> From<&'a HtmlDecodedDictEntry> for WordAST<'a> {
         WordAST {
             source: WordNode::with_fallback_from(&entry.source),
             translation: WordNode::with_fallback_from(&entry.translation),
-            word_class: &entry.word_class,
+            word_classes: &entry.word_classes,
         }
     }
 }

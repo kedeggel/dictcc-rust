@@ -9,16 +9,19 @@ use parse::word_ast::{WordNode, WordAST};
 pub struct DictEntry {
     pub source: DictWord,
     pub translation: DictWord,
-    // TODO: Vec<WordClass> + parsing
-    pub word_class: Option<WordClass>,
+    pub word_classes: Vec<WordClass>,
 }
 
 impl DictEntry {
     pub fn try_from(ast: &WordAST) -> DictResult<Self> {
+        let mut classes = Vec::new();
+        for class in ast.word_classes.split_whitespace() {
+            classes.push(WordClass::try_from(class)?);
+        }
         Ok(DictEntry {
             source: DictWord::try_from(&ast.source)?,
             translation: DictWord::try_from(&ast.translation)?,
-            word_class: WordClass::try_from(ast.word_class)?,
+            word_classes: classes,
         })
     }
 }
@@ -117,8 +120,8 @@ impl FromStr for Gender {
             "f" => Feminine,
             "m" => Masculine,
             "n" => Neuter,
-            "pl" => Plural,
-            "sg" => Singular,
+            "pl"|"pl." => Plural,
+            "sg"|"sg." => Singular,
             unknown => Err(DictError::UnknownGender { name: unknown.to_string(), backtrace: Backtrace::new() })?
         })
     }
@@ -140,11 +143,8 @@ pub enum WordClass {
 }
 
 impl WordClass {
-    pub fn try_from(s: &str) -> DictResult<Option<Self>> {
-        match s {
-            "" => Ok(None),
-            s => Ok(Some(s.parse()?))
-        }
+    pub fn try_from(s: &str) -> DictResult<Self> {
+        Ok(s.parse()?)
     }
 }
 
@@ -154,7 +154,7 @@ impl FromStr for WordClass {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use self::WordClass::*;
 
-        Ok(match s {
+        Ok(match s.trim_right_matches('.') {
             "adj" => Adjective,
             "adv" => Adverb,
             "past-p" => Past,

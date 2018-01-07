@@ -7,7 +7,7 @@ use parse::raw_csv::RawDictEntry;
 pub struct HtmlDecodedDictEntry {
     pub source: String,
     pub translation: String,
-    pub word_class: String,
+    pub word_classes: String,
 }
 
 impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
@@ -15,7 +15,7 @@ impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
         HtmlDecodedDictEntry {
             source: html_decode_with_fallback(&raw.source),
             translation: html_decode_with_fallback(&raw.translation),
-            word_class: raw.word_class.clone(),
+            word_classes: raw.word_classes.clone(),
         }
     }
 }

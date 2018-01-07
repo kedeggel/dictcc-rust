@@ -10,7 +10,7 @@ use error::DictError;
 pub struct RawDictEntry {
     pub source: String,
     pub translation: String,
-    pub word_class: String,
+    pub word_classes: String,
 }
 
 pub fn incomplete_records_filter(record: &Result<RawDictEntry, csv::Error>) -> bool {
