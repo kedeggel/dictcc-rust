@@ -1,7 +1,16 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+extern crate csv;
+#[macro_use]
+extern crate failure;
+extern crate htmlescape;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate nom;
+extern crate env_logger;
+#[macro_use]
+extern crate log;
+
+pub mod parse;
+pub mod dict;
+mod error;

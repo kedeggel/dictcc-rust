@@ -1,0 +1,44 @@
+extern crate csv;
+extern crate failure;
+
+use failure::ResultExt;
+
+use error::DictResult;
+use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter};
+use parse::html::HtmlDecodedDictEntry;
+use parse::word_ast::WordAST;
+use parse::raw_csv::RawDictEntry;
+use dict::DictEntry;
+
+pub fn parse_test() -> DictResult<()> {
+    let mut reader = get_csv_reader_from_path("../database/dictcc_DE-EN.txt")?;
+
+    let records = reader
+        .deserialize()
+        .filter(incomplete_records_filter)
+        .enumerate();
+
+    for (i, record) in records {
+        let raw_entry: RawDictEntry = record?;
+
+        let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
+
+        let word_ast = WordAST::from(&html_decoded_entry);
+
+        let dict_entry = DictEntry::try_from(&word_ast)
+            .context(format!("index: {}, word_ast {:?}", i, word_ast))?;
+
+        if i == 0 {
+            eprintln!("i = {:?}", i);
+            eprintln!("raw_entry = {:?}", raw_entry);
+            eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
+            eprintln!("word_ast = {:?}", word_ast);
+            eprintln!("dict_entry = {:?}", dict_entry);
+        }
+    }
+
+    // pause for memory consumption monitoring
+//    ::std::io::stdin().read_line(&mut String::new()).unwrap();
+
+    Ok(())
+}
