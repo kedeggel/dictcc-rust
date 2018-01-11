@@ -1,5 +1,6 @@
 extern crate csv;
 extern crate failure;
+extern crate regex;
 
 use error::DictResult;
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter};
@@ -7,10 +8,20 @@ use parse::html::HtmlDecodedDictEntry;
 use parse::word_ast::WordAST;
 use parse::raw_csv::RawDictEntry;
 use dict::DictEntry;
+use regex::Regex;
 
 pub fn parse_test() -> DictResult<()> {
     let mut reader = get_csv_reader_from_path("../database/dictcc_DE-EN.txt")?;
 
+    {
+        let mut with_header = csv::ReaderBuilder::new().from_path("../database/dictcc_DE-EN.txt")?;
+        let header = with_header.headers().unwrap();
+        let re = Regex::new("[A-Z]{2}-[A-Z]{2}").unwrap();
+        let mat = re.find(header.get(0).unwrap()).unwrap();
+        println!("HEADER: {:?}", header);
+        println!("matches: {:?}", mat.as_str());
+
+    }
     let records = reader
         .deserialize()
         .filter(incomplete_records_filter)
@@ -37,7 +48,7 @@ pub fn parse_test() -> DictResult<()> {
             },
             Err(err) => {
                 error_counter += 1;
-                eprintln!("Error {}: {},\n index: {}, word_ast {:?}", error_counter, err, i, word_ast);
+               // eprintln!("Error {}: {},\n index: {}, word_ast {:?}", error_counter, err, i, word_ast);
             }
         };
     }

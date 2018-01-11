@@ -22,6 +22,11 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
+    #[fail(display = "Invalid language code: {}", lang)]
+    InvalidLanguageCode {
+        lang: String,
+        backtrace: Backtrace,
+    },
 
     #[fail(display = "{}", _0)]
     Io(#[cause] io::Error),
