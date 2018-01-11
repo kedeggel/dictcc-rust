@@ -116,12 +116,12 @@ impl FromStr for Gender {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use self::Gender::*;
 
-        Ok(match s {
+        Ok(match s.trim_right_matches('.') {
             "f" => Feminine,
             "m" => Masculine,
             "n" => Neuter,
-            "pl"|"pl." => Plural,
-            "sg"|"sg." => Singular,
+            "pl" => Plural,
+            "sg" => Singular,
             unknown => Err(DictError::UnknownGender { name: unknown.to_string(), backtrace: Backtrace::new() })?
         })
     }
