@@ -9,7 +9,7 @@ use parse::raw_csv::RawDictEntry;
 use dict::DictEntry;
 
 pub fn parse_test() -> DictResult<()> {
-    let mut reader = get_csv_reader_from_path("../database/dictcc_DE-EN.txt")?;
+    let mut reader = get_csv_reader_from_path("database/dictcc_DE-EN.txt")?;
 
     let records = reader
         .deserialize()
