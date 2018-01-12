@@ -1,9 +1,80 @@
 use std::str::FromStr;
+use std::fmt::{self, Display, Formatter};
+use std::path::Path;
 
 use error::{DictError, DictResult};
 use failure::Backtrace;
-
 use parse::word_ast::{WordNode, WordAST};
+
+
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct DictQueryResult {
+    entries: Vec<DictEntry>
+}
+
+impl Display for DictQueryResult {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        unimplemented!()
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct DictBuilder {
+    path: Option<PathBuf>
+}
+
+impl DictBuilder {
+    pub fn new() -> Self {
+        DictBuilder {
+            path: None,
+        }
+    }
+
+    pub fn path<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
+        self.path = Some(path.as_ref().to_owned());
+        self
+    }
+
+    pub fn build(self) -> DictResult<Dict> {
+        // debug.rs
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Dict {
+    entries: Vec<DictEntry>,
+
+}
+
+impl Dict {
+    pub fn query(&self) -> DictQueryBuilder {
+        let dict: Dict = unimplemented!();
+
+        dict.query().exact()
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct DictQueryBuilder {
+
+}
+
+impl DictQueryBuilder {
+    pub fn language(&mut self, language: Language) -> &mut Self {
+
+    }
+
+    pub fn word(&self) {
+
+    }
+    pub fn exact(&self) {
+
+    }
+    pub fn regex(&self) {
+
+    }
+}
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
