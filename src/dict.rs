@@ -1,89 +1,117 @@
 use std::str::FromStr;
 use std::fmt::{self, Display, Formatter};
-use std::path::Path;
+use std::path::{PathBuf, Path};
 
 use error::{DictError, DictResult};
 use failure::Backtrace;
+use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
+use parse::html::HtmlDecodedDictEntry;
 use parse::word_ast::{WordNode, WordAST};
+use regex::RegexBuilder;
 
-
-
+/// Result of a translation query
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResult {
     entries: Vec<DictEntry>
 }
 
 impl Display for DictQueryResult {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, _f: &mut Formatter) -> fmt::Result {
         unimplemented!()
     }
 }
 
+/// A configurable builder for a dictionary
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictBuilder {
+    /// Path where the dictionary database is stored
     path: Option<PathBuf>
 }
 
 impl DictBuilder {
+    /// Create a new DictBuilder
     pub fn new() -> Self {
         DictBuilder {
             path: None,
         }
     }
 
+    /// Configure the path where the dictionary database is stored
     pub fn path<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         self.path = Some(path.as_ref().to_owned());
         self
     }
 
+    /// Consume the builder and create the dictionary
     pub fn build(self) -> DictResult<Dict> {
-        // debug.rs
+        if self.path.is_none() {
+            return Err(DictError::NoPathSet);
+        }
+
+        let mut reader = get_csv_reader_from_path(self.path.unwrap())?;
+
+        let records = reader
+            .deserialize()
+            .filter(incomplete_records_filter);
+
+        let mut entries = vec![];
+
+        for record in records {
+            let raw_entry: RawDictEntry = record?;
+            let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
+            let word_ast = WordAST::from(&html_decoded_entry);
+            if let Ok(entry) = DictEntry::try_from(&word_ast) {
+                entries.push(entry);
+            };
+        }
+        Ok(Dict {
+            entries
+        })
     }
 }
 
+/// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Dict {
+    /// List of all dictionary entries
     entries: Vec<DictEntry>,
 
 }
 
 impl Dict {
-    pub fn query(&self) -> DictQueryBuilder {
-        let dict: Dict = unimplemented!();
+    pub fn query_exact(&self, _query: &str) -> DictQueryResult {
+        unimplemented!()
+    }
 
-        dict.query().exact()
+    pub fn query_word(&self, query: &str) -> DictQueryResult {
+        let re = RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", query)).case_insensitive(true).build().unwrap();
+
+        DictQueryResult {
+            entries: self.entries.to_owned().into_iter().filter(|entry| {
+                re.is_match(&entry.translation.plain_word.to_lowercase()) ||
+                    re.is_match(&entry.source.plain_word.to_lowercase())
+            }).collect()
+        }
+    }
+
+    pub fn query_regex(&self, _regex: &str) -> DictQueryResult {
+        unimplemented!()
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct DictQueryBuilder {
-
-}
-
-impl DictQueryBuilder {
-    pub fn language(&mut self, language: Language) -> &mut Self {
-
-    }
-
-    pub fn word(&self) {
-
-    }
-    pub fn exact(&self) {
-
-    }
-    pub fn regex(&self) {
-
-    }
-}
-
+/// Structure that holds the word pair and it'S class
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
+    /// Source word
     pub source: DictWord,
+    /// Target word
     pub translation: DictWord,
+    /// List of word classes (`noun`, `verb`, `adj`, etc.)
     pub word_classes: Vec<WordClass>,
 }
 
 impl DictEntry {
+    /// Try to convert from WordAST into DictEntry
     pub fn try_from(ast: &WordAST) -> DictResult<Self> {
         let mut classes = Vec::new();
         for class in ast.word_classes.split_whitespace() {
@@ -97,58 +125,55 @@ impl DictEntry {
     }
 }
 
+/// Structure that contains all fields of a dictionary entry from dict.cc
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictWord {
-    // FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
-    //pub language: Language,
+// FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
+//pub language: Language,
 
-    /// # Syntax:
+    /// Syntax:
     /// `<foo>`
     /// `<foo, bar>`
     ///
-    /// # Indexing
-    /// sorting: false
-    /// keyword: true
+// Indexing
+// sorting: false
+// keyword: true
     pub acronyms: Vec<String>,
-
-    /// # Syntax:
+    /// Syntax:
     /// `{f}`
     /// `{m}`
     /// `{n}`
     /// `{pl}`
     /// `{sg}`
-    ///
-    /// # Indexing
-    /// sorting: false
-    /// keyword: false
+// Indexing
+// sorting: false
+// keyword: false
     pub gender: Option<Gender>,
-
-    /// # Syntax:
+    /// Syntax:
     /// `[foo]`
     ///
-    /// # Indexing
-    /// sorting: false
-    /// keyword: false
+// Indexing
+// sorting: false
+// keyword: false
     pub comment: String,
-
     /// The word with optional parts
     ///
-    /// # Syntax:
+    /// Syntax:
     /// `(a) foo`
     ///
     /// sorting: true
     /// keyword: true
     pub complete_word: String,
-
     /// The word without optional parts
     ///
-    /// # Syntax:
+    ///  Syntax:
     /// `foo`
     pub plain_word: String,
 }
 
 impl DictWord {
-    fn try_from<'a>(ast: &[WordNode<'a>]) -> Result<Self, DictError> {
+    /// Try to convert from a WordNode into a DictWord
+    fn try_from<'a>(ast: &[WordNode<'a>]) -> DictResult<Self> {
         let gender = match WordNode::build_gender_tag_string(&ast) {
             Some(gender_string) => Some(gender_string.parse()?),
             None => None,
@@ -164,14 +189,19 @@ impl DictWord {
     }
 }
 
+/// Lists all available languages
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Language {
+    /// German
     DE,
+    /// English
     EN,
-    // ...
+    // TODO: List all available languages
+    /// Other language that are not listed explicitly
     Other { language_code: String },
 }
 
+/// Lists all available genders
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
     Feminine,
@@ -184,6 +214,7 @@ pub enum Gender {
 impl FromStr for Gender {
     type Err = DictError;
 
+    /// Performs the fault-tolerant conversion from str into a Gender
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use self::Gender::*;
 
@@ -198,6 +229,7 @@ impl FromStr for Gender {
     }
 }
 
+/// Lists all available WordClasses
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum WordClass {
     Adjective,
@@ -210,7 +242,7 @@ pub enum WordClass {
     Pronoun,
     Prefix,
     Suffix,
-    Noun
+    Noun,
 }
 
 impl WordClass {
@@ -222,6 +254,7 @@ impl WordClass {
 impl FromStr for WordClass {
     type Err = DictError;
 
+    /// Performs the fault-tolerant conversion from str into a WordClass
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use self::WordClass::*;
 

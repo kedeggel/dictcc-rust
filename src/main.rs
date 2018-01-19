@@ -1,6 +1,7 @@
 extern crate dictcc;
 extern crate failure;
 extern crate env_logger;
+extern crate regex;
 
 fn main() {
     env_logger::init();
@@ -9,5 +10,4 @@ fn main() {
         println!("{}", err);
         println!("{:?}", err);
     }
-
 }

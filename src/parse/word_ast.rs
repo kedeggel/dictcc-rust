@@ -1,7 +1,6 @@
 extern crate nom;
 
-use error::DictError;
-use error::DictResult;
+use error::{DictResult, DictError};
 use parse::html::HtmlDecodedDictEntry;
 
 /// Parsing AST node
@@ -20,6 +19,7 @@ pub enum WordNode<'a> {
 }
 
 impl<'a> WordNode<'a> {
+    /// Performs the conversion from str into WordNode
     pub fn try_from(s: &str) -> DictResult<Vec<WordNode>> {
         let nom_res: nom::IResult<_, _> = entry(s);
         Ok(nom_res.to_full_result().map_err(|err| {
@@ -133,14 +133,19 @@ impl<'a> fmt::Display for WordNode<'a> {
     }
 }
 
+/// Word Abstract-Syntax-Tree
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct WordAST<'a> {
+    /// Source word, parsed into WordNodes
     pub source: Vec<WordNode<'a>>,
+    /// Target word, parsed into WordNodes
     pub translation: Vec<WordNode<'a>>,
+    /// Simple str representation of word classes
     pub word_classes: &'a str,
 }
 
 impl<'a> WordAST<'a> {
+    /// Try to convert from HtmlDecodedDictEntry into WordAST
     pub fn try_from(entry: &'a HtmlDecodedDictEntry) -> DictResult<WordAST<'a>> {
         Ok(WordAST {
             source: WordNode::try_from(&entry.source)?,
@@ -151,6 +156,7 @@ impl<'a> WordAST<'a> {
 }
 
 impl<'a> From<&'a HtmlDecodedDictEntry> for WordAST<'a> {
+    /// Perform conversion from HtmlDecodedDictEntry into WordAST
     fn from(entry: &'a HtmlDecodedDictEntry) -> WordAST<'a> {
         WordAST {
             source: WordNode::with_fallback_from(&entry.source),
