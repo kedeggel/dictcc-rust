@@ -2,49 +2,47 @@ extern crate csv;
 extern crate failure;
 
 use error::DictResult;
-use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter};
-use parse::html::HtmlDecodedDictEntry;
-use parse::word_ast::WordAST;
-use parse::raw_csv::RawDictEntry;
-use dict::DictEntry;
+use dict::{DictQuery, DictBuilder, QueryDirection};
 
 pub fn parse_test() -> DictResult<()> {
-    let mut reader = get_csv_reader_from_path("database/dictcc_DE-EN.txt")?;
+    let dict = DictBuilder::new().path("database/dictcc_DE-EN.txt").build()?;
+    let mut dq = DictQuery::new(&dict);
 
-    let records = reader
-        .deserialize()
-        .filter(incomplete_records_filter)
-        .enumerate();
+    loop {
+        println!("Direction (left, right or both):");
+        let mut direction = String::new();
+        ::std::io::stdin().read_line(&mut direction).unwrap();
+        match direction.trim_right_matches('\n') {
+            "right" => { dq.set_query_direction(QueryDirection::ToRight); }
+            "left" => { dq.set_query_direction(QueryDirection::ToLeft); }
+            "both" => { dq.set_query_direction(QueryDirection::Bidirectional); }
+            _ => {}
+        }
 
-    let mut error_counter = 0;
 
-    for (i, record) in records {
-        let raw_entry: RawDictEntry = record?;
+        println!("Searchtype (word, exact or regex):");
+        let mut qtype = String::new();
+        ::std::io::stdin().read_line(&mut qtype).unwrap();
+        match qtype.trim_right_matches('\n') {
+            "word" => { dq.word(); }
+            "exact" => { dq.exact(); }
+            "regex" => { dq.regex(); }
+            _ => {}
+        }
 
-        let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
+        println!("Search:");
+        let mut query = String::new();
+        ::std::io::stdin().read_line(&mut query).unwrap();
+        query = query.trim_right_matches("\n").to_string();
+        if query == "" {
+            break
+        }
 
-        let word_ast = WordAST::from(&html_decoded_entry);
-
-        match DictEntry::try_from(&word_ast) {
-            Ok(dict_entry) => {
-                if  i == 0 {
-                    eprintln!("i = {:?}", i);
-                    eprintln!("raw_entry = {:?}", raw_entry);
-                    eprintln!("html_decoded_entry = {:?}", html_decoded_entry);
-                    eprintln!("word_ast = {:?}", word_ast);
-                    eprintln!("dict_entry = {:?}", dict_entry);
-                }
-            },
-            Err(err) => {
-                error_counter += 1;
-                eprintln!("Error {}: {},\n index: {}, word_ast {:?}", error_counter, err, i, word_ast);
-            }
-        };
+        eprintln!("query = {:?}", query);
+        let dqr = dq.query(&query);
+        for (i, res) in dqr.get_results().iter().enumerate() {
+            println!("Result {}: {:?}", i+1, res);
+        }
     }
-
-
-    // pause for memory consumption monitoring
-//    ::std::io::stdin().read_line(&mut String::new()).unwrap();
-
     Ok(())
 }

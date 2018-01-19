@@ -7,12 +7,18 @@ use failure::Backtrace;
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::html::HtmlDecodedDictEntry;
 use parse::word_ast::{WordNode, WordAST};
-use regex::RegexBuilder;
+use regex::{escape, RegexBuilder};
 
 /// Result of a translation query
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResult {
     entries: Vec<DictEntry>
+}
+
+impl DictQueryResult {
+    pub fn get_results(&self) -> &Vec<DictEntry> {
+        &self.entries
+    }
 }
 
 impl Display for DictQueryResult {
@@ -37,7 +43,7 @@ impl DictBuilder {
     }
 
     /// Configure the path where the dictionary database is stored
-    pub fn path<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
+    pub fn path<P: AsRef<Path>>(mut self, path: P) -> Self {
         self.path = Some(path.as_ref().to_owned());
         self
     }
@@ -79,24 +85,81 @@ pub struct Dict {
 }
 
 impl Dict {
-    pub fn query_exact(&self, _query: &str) -> DictQueryResult {
-        unimplemented!()
+    pub fn get_entries(&self) -> &Vec<DictEntry> {
+        &self.entries
     }
+}
 
-    pub fn query_word(&self, query: &str) -> DictQueryResult {
-        let re = RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", query)).case_insensitive(true).build().unwrap();
+pub struct DictQuery<'a> {
+    dict: &'a Dict,
+    query_type: QueryType,
+    query_direction: QueryDirection,
+}
 
-        DictQueryResult {
-            entries: self.entries.to_owned().into_iter().filter(|entry| {
-                re.is_match(&entry.translation.plain_word.to_lowercase()) ||
-                    re.is_match(&entry.source.plain_word.to_lowercase())
-            }).collect()
+impl<'a> DictQuery<'a> {
+    pub fn new(dict: &'a Dict) -> Self {
+        Self {
+            dict,
+            query_type: QueryType::Word,
+            query_direction: QueryDirection::Bidirectional,
         }
     }
 
-    pub fn query_regex(&self, _regex: &str) -> DictQueryResult {
-        unimplemented!()
+    pub fn set_query_direction(&mut self, query_direction: QueryDirection) -> &Self {
+        self.query_direction = query_direction;
+        self
     }
+
+    /// Every entry that contains the query-word is a hit (default!)
+    pub fn word(&mut self) -> &Self {
+        self.query_type = QueryType::Word;
+        self
+    }
+
+    /// Search for exact matches
+    pub fn exact(&mut self) -> &Self {
+        self.query_type = QueryType::Exact;
+        self
+    }
+
+    /// Search for regex, so the user can specify by himself what he wants to match
+    pub fn regex(&mut self) -> &Self {
+        self.query_type = QueryType::Regex;
+        self
+    }
+
+    pub fn query(&self, query: &str) -> DictQueryResult {
+        let regexp = match self.query_type {
+            QueryType::Word => RegexBuilder::new(&format!(r"^{}$", escape(query))).case_insensitive(true).build().unwrap(),
+            QueryType::Exact => RegexBuilder::new(&format!(r"^{}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
+            QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", query)).case_insensitive(true).build().unwrap(),
+        };
+
+        DictQueryResult {
+            entries: self.dict.entries.to_owned().into_iter().filter(|entry| {
+                println!("{:?}", self.query_direction);
+                match self.query_direction {
+                    QueryDirection::ToRight => regexp.is_match(&entry.source.plain_word.to_lowercase()),
+                    QueryDirection::ToLeft => regexp.is_match(&entry.translation.plain_word.to_lowercase()),
+                    QueryDirection::Bidirectional => regexp.is_match(&entry.source.plain_word.to_lowercase())
+                        || regexp.is_match(&entry.translation.plain_word.to_lowercase()),
+                }
+            }).collect()
+        }
+    }
+}
+
+enum QueryType {
+    Exact,
+    Regex,
+    Word,
+}
+
+#[derive(Debug)]
+pub enum QueryDirection {
+    ToRight,
+    ToLeft,
+    Bidirectional,
 }
 
 /// Structure that holds the word pair and it'S class
