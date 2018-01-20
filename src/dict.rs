@@ -1,3 +1,5 @@
+extern crate csv;
+
 use std::str::FromStr;
 
 use error::{DictError, DictResult};
@@ -101,6 +103,23 @@ pub enum Language {
     Other { language_code: String },
 }
 
+impl FromStr for Language {
+    type Err = DictError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::Language::*;
+        if s.len() != 2 {
+            return Err(DictError::InvalidLanguageCode { lang: s.to_string(), backtrace: Backtrace::new() });
+        }
+        Ok(match s {
+            "DE" => DE,
+            "EN" => EN,
+            // ...
+            _ => Other { language_code: s.to_string() }
+        })
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
     Feminine,
@@ -139,7 +158,7 @@ pub enum WordClass {
     Pronoun,
     Prefix,
     Suffix,
-    Noun
+    Noun,
 }
 
 impl WordClass {
