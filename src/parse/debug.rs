@@ -2,11 +2,11 @@ extern crate csv;
 extern crate failure;
 
 use error::DictResult;
-use dict::{DictQuery, DictBuilder, QueryDirection};
+use dict::{Dict, QueryDirection};
 
 pub fn parse_test() -> DictResult<()> {
-    let dict = DictBuilder::new().path("database/dictcc_DE-EN.txt").build()?;
-    let mut dq = DictQuery::new(&dict);
+    let dict = Dict::create("database/dictcc_DE-EN.txt")?;
+    let mut dq = dict.query();
 
     loop {
         println!("Direction (left, right or both):");
@@ -41,7 +41,8 @@ pub fn parse_test() -> DictResult<()> {
         eprintln!("query = {:?}", query);
         let dqr = dq.query(&query);
         for (i, res) in dqr.get_results().iter().enumerate() {
-            println!("Result {}: {:?}", i+1, res);
+            println!("Result {}: {}", i + 1, res);
+            println!("Result {} (verbose): {}", i + 1, res.to_long_string());
         }
     }
     Ok(())

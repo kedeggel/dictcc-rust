@@ -49,9 +49,6 @@ pub enum DictError {
 
     #[fail(display = "Parse error with context: {:?}", _0)]
     Context(#[cause] Context<String>),
-
-    #[fail(display = "No database path has been set")]
-    NoPathSet,
 }
 
 impl From<csv::Error> for DictError {

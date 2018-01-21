@@ -1,6 +1,6 @@
 use std::str::FromStr;
 use std::fmt::{self, Display, Formatter};
-use std::path::{PathBuf, Path};
+use std::path::Path;
 
 use error::{DictError, DictResult};
 use failure::Backtrace;
@@ -16,7 +16,7 @@ pub struct DictQueryResult {
 }
 
 impl DictQueryResult {
-    pub fn get_results(&self) -> &Vec<DictEntry> {
+    pub fn get_results(&self) -> &[DictEntry] {
         &self.entries
     }
 }
@@ -27,34 +27,16 @@ impl Display for DictQueryResult {
     }
 }
 
-/// A configurable builder for a dictionary
+/// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub struct DictBuilder {
-    /// Path where the dictionary database is stored
-    path: Option<PathBuf>
+pub struct Dict {
+    /// List of all dictionary entries
+    entries: Vec<DictEntry>,
 }
 
-impl DictBuilder {
-    /// Create a new DictBuilder
-    pub fn new() -> Self {
-        DictBuilder {
-            path: None,
-        }
-    }
-
-    /// Configure the path where the dictionary database is stored
-    pub fn path<P: AsRef<Path>>(mut self, path: P) -> Self {
-        self.path = Some(path.as_ref().to_owned());
-        self
-    }
-
-    /// Consume the builder and create the dictionary
-    pub fn build(self) -> DictResult<Dict> {
-        if self.path.is_none() {
-            return Err(DictError::NoPathSet);
-        }
-
-        let mut reader = get_csv_reader_from_path(self.path.unwrap())?;
+impl Dict {
+    pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
+        let mut reader = get_csv_reader_from_path(path)?;
 
         let records = reader
             .deserialize()
@@ -70,23 +52,21 @@ impl DictBuilder {
                 entries.push(entry);
             };
         }
-        Ok(Dict {
+        Ok(Self {
             entries
         })
     }
-}
 
-/// Structure that contains all dictionary entries
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct Dict {
-    /// List of all dictionary entries
-    entries: Vec<DictEntry>,
-
-}
-
-impl Dict {
-    pub fn get_entries(&self) -> &Vec<DictEntry> {
+    pub fn get_entries(&self) -> &[DictEntry] {
         &self.entries
+    }
+
+    pub fn query(&self) -> DictQuery {
+        DictQuery {
+            dict: &self,
+            query_type: QueryType::Word,
+            query_direction: QueryDirection::Bidirectional,
+        }
     }
 }
 
@@ -97,14 +77,6 @@ pub struct DictQuery<'a> {
 }
 
 impl<'a> DictQuery<'a> {
-    pub fn new(dict: &'a Dict) -> Self {
-        Self {
-            dict,
-            query_type: QueryType::Word,
-            query_direction: QueryDirection::Bidirectional,
-        }
-    }
-
     pub fn set_query_direction(&mut self, query_direction: QueryDirection) -> &Self {
         self.query_direction = query_direction;
         self
@@ -130,21 +102,20 @@ impl<'a> DictQuery<'a> {
 
     pub fn query(&self, query: &str) -> DictQueryResult {
         let regexp = match self.query_type {
-            QueryType::Word => RegexBuilder::new(&format!(r"^{}$", escape(query))).case_insensitive(true).build().unwrap(),
-            QueryType::Exact => RegexBuilder::new(&format!(r"^{}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
+            QueryType::Word => RegexBuilder::new(&format!(r"^{}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
+            QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(query))).case_insensitive(true).build().unwrap(),
             QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", query)).case_insensitive(true).build().unwrap(),
         };
 
         DictQueryResult {
-            entries: self.dict.entries.to_owned().into_iter().filter(|entry| {
-                println!("{:?}", self.query_direction);
+            entries: self.dict.entries.iter().filter(|entry| {
                 match self.query_direction {
                     QueryDirection::ToRight => regexp.is_match(&entry.source.plain_word.to_lowercase()),
                     QueryDirection::ToLeft => regexp.is_match(&entry.translation.plain_word.to_lowercase()),
                     QueryDirection::Bidirectional => regexp.is_match(&entry.source.plain_word.to_lowercase())
                         || regexp.is_match(&entry.translation.plain_word.to_lowercase()),
                 }
-            }).collect()
+            }).cloned().collect()
         }
     }
 }
@@ -185,6 +156,47 @@ impl DictEntry {
             translation: DictWord::try_from(&ast.translation)?,
             word_classes: classes,
         })
+    }
+
+    pub fn to_long_string(&self) -> String {
+        format!("{} {}{}{}\t<->\t{} {}{}{}\t{:?}",
+                self.source.complete_word, Self::format_acronyms(&self.source.acronyms),
+                Self::format_gender(&self.source.gender), Self::format_comment(&self.source.comment),
+                self.translation.complete_word, Self::format_acronyms(&self.translation.acronyms),
+                Self::format_gender(&self.translation.gender),
+                Self::format_comment(&self.translation.comment), self.word_classes)
+    }
+
+    fn format_acronyms(acronyms: &Vec<String>) -> String {
+        let mut formatted = String::new();
+        if acronyms.len() > 0 {
+            acronyms.iter().for_each(|s| {
+                formatted.push_str(s);
+                formatted.push(' ');
+            });
+            formatted = format!("<{}> ", formatted.trim());
+        }
+        formatted
+    }
+
+    fn format_gender(gender: &Option<Gender>) -> String {
+        match *gender {
+            Some(ref g) => format!("{{{:?}}}", g),
+            None => String::new()
+        }
+    }
+
+    fn format_comment(comment: &String) -> String {
+        match comment.trim() {
+            "" => String::new(),
+            _ => format!("[{}] ", comment),
+        }
+    }
+}
+
+impl Display for DictEntry {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}\t<->\t{}\t{:?}", self.source.complete_word, self.translation.complete_word, self.word_classes)
     }
 }
 
