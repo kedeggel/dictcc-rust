@@ -4,8 +4,8 @@ extern crate failure;
 use error::DictResult;
 use dict::{Dict, QueryDirection};
 
-pub fn parse_test() -> DictResult<()> {
-    let dict = Dict::create("database/dictcc_DE-EN.txt")?;
+pub fn parse_test(path: &str) -> DictResult<()> {
+    let dict = Dict::create(path)?;
     let mut dq = dict.query();
 
     loop {
@@ -44,6 +44,8 @@ pub fn parse_test() -> DictResult<()> {
             println!("Result {}: {}", i + 1, res);
             println!("Result {} (verbose): {}", i + 1, res.to_long_string());
         }
+
+        println!("{}", dqr.into_grouped());
     }
     Ok(())
 }
