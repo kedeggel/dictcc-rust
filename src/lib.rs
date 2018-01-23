@@ -11,6 +11,9 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate regex;
+#[macro_use]
+extern crate prettytable;
+extern crate itertools;
 
 pub mod parse;
 pub mod dict;
