@@ -2,7 +2,7 @@
 
 (optionales) Wort {f} [Kommentar] <Akronym, anderes Akronym>	(optional) word {f} [comment] <acronym, other acronym>	noun
 DE	EN	noun
-keine Wortart	no word class
+keine Wortart	no word class	
 Substantiv	noun	noun
 Verb	verb	verb
 foo Substantiv	foo noun	noun
