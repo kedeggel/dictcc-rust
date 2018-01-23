@@ -106,7 +106,8 @@ impl<'a> DictQuery<'a> {
 
     pub fn query(&self, query: &str) -> DictQueryResult {
         let regexp = match self.query_type {
-            QueryType::Word => RegexBuilder::new(&format!(r"^{}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
+            // TODO: remove unwrap
+            QueryType::Word => RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
             QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(query))).case_insensitive(true).build().unwrap(),
             QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", query)).case_insensitive(true).build().unwrap(),
         };

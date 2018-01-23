@@ -77,7 +77,7 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
             let word_class_group_by =
                 same_word_count_pairs.into_iter().group_by(|&(word_class_group, _)| word_class_group);
 
-            let mut vec_word_class_group: Vec<DictEntryWordClassGroup> =
+            let vec_word_class_group: Vec<DictEntryWordClassGroup> =
                 word_class_group_by.into_iter().map(|(word_class_group, entries_group)| {
                     let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
 
