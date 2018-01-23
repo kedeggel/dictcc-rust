@@ -9,21 +9,202 @@ use parse::html::HtmlDecodedDictEntry;
 use parse::word_ast::{WordNode, WordAST};
 use regex::{escape, RegexBuilder};
 
+
 /// Result of a translation query
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResult {
-    entries: Vec<DictEntry>
+    entries: Vec<DictEntry>,
 }
 
 impl DictQueryResult {
     pub fn get_results(&self) -> &[DictEntry] {
         &self.entries
     }
+
+    pub fn into_grouped(self) -> DictQueryResultGrouped {
+        self.into()
+    }
 }
 
-impl Display for DictQueryResult {
-    fn fmt(&self, _f: &mut Formatter) -> fmt::Result {
-        unimplemented!()
+/// Used for grouping entries in the output
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
+enum WordClassesGroup {
+    Verbs,
+    Nouns,
+    Others,
+}
+
+impl<'a> From<&'a [WordClass]> for WordClassesGroup {
+    fn from(word_classes: &[WordClass]) -> Self {
+        use self::WordClassesGroup::*;
+
+        if word_classes.contains(&WordClass::Verb) {
+            Verbs
+        } else if word_classes.contains(&WordClass::Noun) {
+            Nouns
+        } else {
+            Others
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct DictQueryResultGrouped {
+    word_count_groups: Vec<DictEntryWordCountGroup>
+}
+
+impl Display for DictQueryResultGrouped {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use prettytable::format::LinePosition::*;
+        use prettytable::format::LineSeparator;
+        use prettytable::format::consts::FORMAT_CLEAN;
+        use prettytable::Table;
+
+        let mut table = Table::init(
+            self.word_count_groups.iter()
+                .map(|word_count_group| row!(word_count_group.to_string()))
+                .collect()
+        );
+
+        let mut format = FORMAT_CLEAN.clone();
+
+        format.separator(Intern, LineSeparator::new(' ', ' ', ' ', ' '));
+        format.padding(0, 0);
+
+        table.set_format(format);
+
+        f.write_str(&table.to_string())
+    }
+}
+
+impl From<DictQueryResult> for DictQueryResultGrouped {
+    fn from(query_result: DictQueryResult) -> Self {
+        use itertools::Itertools;
+
+        let mut entries = query_result.entries;
+
+        entries.sort_unstable_by_key(DictEntry::get_max_word_count);
+
+        let word_count_group_by = entries.into_iter().group_by(DictEntry::get_max_word_count);
+
+        let grouped_entries: Vec<_> = word_count_group_by.into_iter().map(|(word_count, same_word_count_group)| {
+            let mut same_word_count_pairs: Vec<(WordClassesGroup, DictEntry)> = same_word_count_group
+                .map(|entry| {
+                    let word_classes_group: WordClassesGroup = entry.word_classes.as_slice().into();
+
+                    (word_classes_group, entry)
+                })
+                .collect();
+
+            same_word_count_pairs.sort_unstable_by_key(|&(word_class_group, _)| word_class_group);
+
+            let word_class_group_by =
+                same_word_count_pairs.into_iter().group_by(|&(word_class_group, _)| word_class_group);
+
+            let mut vec_word_class_group: Vec<DictEntryWordClassGroup> =
+                word_class_group_by.into_iter().map(|(word_class_group, entries_group)| {
+                    let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
+
+                    // TODO: left/right
+                    entries.sort_by(|left_entry, right_entry| {
+                        let left = &left_entry.source.indexed_word;
+                        let right = &right_entry.source.indexed_word;
+
+                        left.cmp(&right)
+                    });
+
+                    DictEntryWordClassGroup {
+                        word_count,
+                        word_class_group,
+                        entries,
+                    }
+                }).collect();
+
+            DictEntryWordCountGroup {
+                word_count,
+                word_class_groups: vec_word_class_group,
+            }
+        }).collect();
+
+        DictQueryResultGrouped {
+            word_count_groups: grouped_entries,
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+struct DictEntryWordCountGroup {
+    word_count: u8,
+    word_class_groups: Vec<DictEntryWordClassGroup>,
+}
+
+impl Display for DictEntryWordCountGroup {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use prettytable::format::LinePosition::*;
+        use prettytable::format::LineSeparator;
+        use prettytable::format::consts::FORMAT_CLEAN;
+        use prettytable::Table;
+
+        let mut table = Table::init(
+            self.word_class_groups.iter()
+                .map(|word_class_group| row!(word_class_group.to_string()))
+                .collect()
+        );
+
+        let mut format = FORMAT_CLEAN.clone();
+
+        format.separator(Intern, LineSeparator::new(' ', ' ', ' ', ' '));
+        format.padding(0, 0);
+
+        table.set_format(format);
+
+        f.write_str(&table.to_string())
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+struct DictEntryWordClassGroup {
+    word_count: u8,
+    word_class_group: WordClassesGroup,
+    entries: Vec<DictEntry>,
+}
+
+impl Display for DictEntryWordClassGroup {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use prettytable;
+        use prettytable::Table;
+
+        // TODO:
+        // Complete rendering of word
+        // Colored
+        let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
+            let left = &entry.source.word;
+            let right = &entry.translation.word;
+
+            row![left, right]
+        }).collect();
+
+        let mut entry_table = Table::init(entry_rows);
+
+        entry_table.set_format(*prettytable::format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+
+        let entry_table_string = entry_table.to_string();
+
+        let header_string = match self.word_count {
+            0 | 1 => format!("{:?}", self.word_class_group),
+            higher_word_count => format!("{} Words: {:?}", higher_word_count, self.word_class_group),
+        };
+
+        let mut complete_table = Table::init(vec![row![header_string], row![entry_table_string]]);
+
+
+        let mut format = prettytable::format::consts::FORMAT_NO_BORDER.clone();
+
+        format.padding(0, 0);
+
+        complete_table.set_format(format);
+
+        f.write_str(&complete_table.to_string())
     }
 }
 
@@ -110,12 +291,12 @@ impl<'a> DictQuery<'a> {
         DictQueryResult {
             entries: self.dict.entries.iter().filter(|entry| {
                 match self.query_direction {
-                    QueryDirection::ToRight => regexp.is_match(&entry.source.plain_word.to_lowercase()),
-                    QueryDirection::ToLeft => regexp.is_match(&entry.translation.plain_word.to_lowercase()),
-                    QueryDirection::Bidirectional => regexp.is_match(&entry.source.plain_word.to_lowercase())
-                        || regexp.is_match(&entry.translation.plain_word.to_lowercase()),
+                    QueryDirection::ToRight => regexp.is_match(&entry.source.indexed_word),
+                    QueryDirection::ToLeft => regexp.is_match(&entry.translation.indexed_word),
+                    QueryDirection::Bidirectional => regexp.is_match(&entry.source.indexed_word)
+                        || regexp.is_match(&entry.translation.indexed_word),
                 }
-            }).cloned().collect()
+            }).cloned().collect(),
         }
     }
 }
@@ -126,14 +307,14 @@ enum QueryType {
     Word,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum QueryDirection {
     ToRight,
     ToLeft,
     Bidirectional,
 }
 
-/// Structure that holds the word pair and it'S class
+/// Structure that holds the word pair and it's class
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
     /// Source word
@@ -160,9 +341,9 @@ impl DictEntry {
 
     pub fn to_long_string(&self) -> String {
         format!("{} {}{}{}\t<->\t{} {}{}{}\t{:?}",
-                self.source.complete_word, Self::format_acronyms(&self.source.acronyms),
+                self.source.word, Self::format_acronyms(&self.source.acronyms),
                 Self::format_gender(&self.source.gender), Self::format_comment(&self.source.comment),
-                self.translation.complete_word, Self::format_acronyms(&self.translation.acronyms),
+                self.translation.word, Self::format_acronyms(&self.translation.acronyms),
                 Self::format_gender(&self.translation.gender),
                 Self::format_comment(&self.translation.comment), self.word_classes)
     }
@@ -192,11 +373,20 @@ impl DictEntry {
             _ => format!("[{}] ", comment),
         }
     }
+
+    fn get_max_word_count(&self) -> u8 {
+        use std::cmp::max;
+
+        let source_word_count = self.source.word_count;
+        let translation_word_count = self.translation.word_count;
+
+        max(source_word_count, translation_word_count)
+    }
 }
 
 impl Display for DictEntry {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}\t<->\t{}\t{:?}", self.source.complete_word, self.translation.complete_word, self.word_classes)
+        write!(f, "{}\t<->\t{}\t{:?}", self.source.word, self.translation.word, self.word_classes)
     }
 }
 
@@ -210,9 +400,9 @@ pub struct DictWord {
     /// `<foo>`
     /// `<foo, bar>`
     ///
-// Indexing
-// sorting: false
-// keyword: true
+    /// Indexing:
+    /// not for sorting, but a keyword
+    ///
     pub acronyms: Vec<String>,
     /// Syntax:
     /// `{f}`
@@ -220,30 +410,36 @@ pub struct DictWord {
     /// `{n}`
     /// `{pl}`
     /// `{sg}`
-// Indexing
-// sorting: false
-// keyword: false
+    ///
+    /// Indexing:
+    /// not for sorting and not a keyword
+    ///
     pub gender: Option<Gender>,
     /// Syntax:
     /// `[foo]`
     ///
-// Indexing
-// sorting: false
-// keyword: false
+    /// Indexing:
+    /// not for sorting and not a keyword
+    ///
     pub comment: String,
     /// The word with optional parts
     ///
     /// Syntax:
     /// `(a) foo`
     ///
-    /// sorting: true
-    /// keyword: true
-    pub complete_word: String,
-    /// The word without optional parts
+    /// Indexing:
+    /// for sorting and a keyword
+    ///
+    pub word: String,
+    /// The word without the brackets of optional parts and lowercase.
+    /// Is used for searching and sorting.
     ///
     ///  Syntax:
-    /// `foo`
-    pub plain_word: String,
+    /// `(a) Foo` -> `a foo`
+    indexed_word: String,
+
+    /// The number of space separated words in this `DictWord`
+    pub word_count: u8,
 }
 
 impl DictWord {
@@ -258,8 +454,9 @@ impl DictWord {
             acronyms: WordNode::build_acronyms_vec(&ast),
             gender,
             comment: WordNode::build_comment_string(&ast),
-            complete_word: WordNode::build_word_with_optional_parts(&ast),
-            plain_word: WordNode::build_word_without_optional_parts(&ast),
+            word: WordNode::build_word_with_optional_parts(&ast),
+            indexed_word: WordNode::build_indexed_word(&ast),
+            word_count: WordNode::count_words(&ast),
         })
     }
 }
@@ -304,8 +501,9 @@ impl FromStr for Gender {
     }
 }
 
+
 /// Lists all available WordClasses
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Ord, PartialOrd)]
 pub enum WordClass {
     Adjective,
     Adverb,

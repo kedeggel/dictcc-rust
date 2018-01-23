@@ -93,17 +93,28 @@ impl<'a> WordNode<'a> {
         }).collect::<Vec<_>>().join(" ")
     }
 
-    pub fn build_word_without_optional_parts(ast: &[Self]) -> String {
+    pub fn build_indexed_word(ast: &[Self]) -> String {
         use self::WordNode::*;
 
         ast.iter().filter_map(|node| {
             match *node {
-                ref node @ Word(_) => {
-                    Some(node.to_string())
+                Word(ref s) | Round(ref s) => {
+                    Some(s.to_string().to_lowercase())
                 }
                 _ => None,
             }
         }).collect::<Vec<_>>().join(" ")
+    }
+
+    pub fn count_words(ast: &[Self]) -> u8 {
+        use self::WordNode::*;
+
+        ast.iter().filter(|node| {
+            match *node {
+                &Word(_) | &Round(_) => true,
+                _ => false,
+            }
+        }).count() as u8
     }
 }
 
