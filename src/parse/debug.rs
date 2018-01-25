@@ -1,10 +1,26 @@
 extern crate csv;
 extern crate failure;
+extern crate regex;
 
 use error::DictResult;
 use dict::{Dict, QueryDirection};
+use regex::Regex;
 
 pub fn parse_test(path: &str) -> DictResult<()> {
+
+    // Header
+    {
+        let mut with_header = csv::ReaderBuilder::new().from_path(path)?;
+        let header = with_header.headers().unwrap();
+        let re = Regex::new("[A-Z]{2}-[A-Z]{2}").unwrap();
+        let mat = re.find(header.get(0).unwrap()).unwrap();
+        println!("HEADER: {:?}", header);
+        println!("matches: {:?}", mat.as_str());
+
+    }
+    // --- Header
+
+
     let dict = Dict::create(path)?;
     let mut dq = dict.query();
 

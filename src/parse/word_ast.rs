@@ -2,6 +2,7 @@ extern crate nom;
 
 use error::{DictResult, DictError};
 use parse::html::HtmlDecodedDictEntry;
+use nom::GetInput;
 
 /// Parsing AST node
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -20,11 +21,22 @@ pub enum WordNode<'a> {
 
 impl<'a> WordNode<'a> {
     /// Performs the conversion from str into WordNode
-    pub fn try_from(s: &str) -> DictResult<Vec<WordNode>> {
-        let nom_res: nom::IResult<_, _> = entry(s);
-        Ok(nom_res.to_full_result().map_err(|err| {
-            DictError::WordASTParse { cause: err, word: s.to_string() }
-        })?)
+    pub fn try_from(word: &str) -> DictResult<Vec<WordNode>> {
+        let nom_res: nom::IResult<_, _> = entry(word);
+
+        match nom_res.remaining_input() {
+            Some("") | None => {}
+            Some(remaining_input) => {
+                return Err(DictError::WordASTRemainingInput {
+                    word: word.to_string(),
+                    remaining_input: remaining_input.to_string(),
+                });
+            }
+        }
+
+        nom_res.to_full_result().map_err(|err| {
+            DictError::WordASTParse { cause: err, word: word.to_string() }
+        }).into()
     }
 
     pub fn with_fallback_from(s: &str) -> Vec<WordNode> {
@@ -184,10 +196,10 @@ named!(csv<&str, Vec<&str> >, separated_list_complete!(
 ));
 
 named!(word<&str, &str>, is_not_s!("([{< ") );
-named!(angle_br<&str,Vec<&str> >,  flat_map!(delimited!(tag_s!("<"), is_not_s!(">"), tag_s!(">")), csv));
-named!(round_br<&str,&str>,  delimited!(tag_s!("("), is_not_s!(")"), tag_s!(")")));
-named!(square_br<&str,&str>, delimited!(tag_s!("["), is_not_s!("]"), tag_s!("]")));
-named!(curly_br<&str,&str>,  delimited!(tag_s!("{"), is_not_s!("}"), tag_s!("}")));
+named!(angle_br<&str,Vec<&str> >,  flat_map!(delimited!(tag_s!("<"), is_not_s!("<>"), tag_s!(">")), csv));
+named!(round_br<&str,&str>,  delimited!(tag_s!("("), is_not_s!("()"), tag_s!(")")));
+named!(square_br<&str,&str>, delimited!(tag_s!("["), is_not_s!("[]"), tag_s!("]")));
+named!(curly_br<&str,&str>,  delimited!(tag_s!("{"), is_not_s!("{}"), tag_s!("}")));
 
 named!(word_fragment<&str, WordNode>,   map!(word,      WordNode::Word));
 named!(angle_fragment<&str, WordNode>,  map!(angle_br,  WordNode::Angle));
@@ -211,7 +223,7 @@ mod tests {
     use nom::IResult::*;
 
     #[test]
-    fn test_word_node() {
+    fn test_entry_parser() {
         let input = "(optional) word {f} [comment] <foo, bar, baz>";
         let expected = vec![
             WordNode::Round("optional"),

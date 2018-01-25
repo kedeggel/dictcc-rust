@@ -22,11 +22,16 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
+    #[fail(display = "Invalid language code: {}", lang)]
+    InvalidLanguageCode {
+        lang: String,
+        backtrace: Backtrace,
+    },
 
     #[fail(display = "{}", _0)]
     Io(#[cause] io::Error),
 
-    #[fail(display = "Could not open dictionary file at \"{}\": {}", path, cause)]
+    #[fail(display = "Could not open dictionary file at {:?}: {}", path, cause)]
     FileOpen {
         path: String,
         #[cause] cause: csv::Error,
@@ -41,10 +46,16 @@ pub enum DictError {
     #[fail(display = "Could not decode HTML character references: {:?}", _0)]
     HtmlDecode(htmlescape::DecodeErr, Backtrace),
 
-    #[fail(display = "Could not parse {}: {:?}", word, cause)]
-    WordASTParse{
+    #[fail(display = "Could not parse {:?}: {:?}", word, cause)]
+    WordASTParse {
+        word: String,
         cause: nom::IError,
-        word: String
+    },
+
+    #[fail(display = "Could not completely parse {:?}: remaining input: {:?}", word, remaining_input)]
+    WordASTRemainingInput {
+        word: String,
+        remaining_input: String,
     },
 
     #[fail(display = "Parse error with context: {:?}", _0)]
