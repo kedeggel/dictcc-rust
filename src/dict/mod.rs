@@ -10,6 +10,7 @@ use parse::word_ast::{WordNode, ASTDictEntry};
 use regex::{escape, RegexBuilder};
 
 use dict::grouped::DictQueryResultGrouped;
+use parse::word_ast::WordNodes;
 
 mod grouped;
 
@@ -263,8 +264,8 @@ pub struct DictWord {
     /// `(a) Foo` -> `a foo`
     indexed_word: String,
 
-    // TODO:
-//    word_nodes: Vec<WordNode<???>>,
+    /// The AST (abstract syntax tree) of the complete word.
+    word_nodes: Vec<WordNode<String>>,
 
     /// The number of space separated words in this `DictWord`
     pub word_count: u8,
@@ -278,12 +279,15 @@ impl DictWord {
             None => None,
         };
 
+        let word_nodes: WordNodes<String> = ast.into();
+
         Ok(DictWord {
             acronyms: WordNode::build_acronyms_vec(&ast),
             gender,
             comment: WordNode::build_comment_string(&ast),
             word: WordNode::build_word_with_optional_parts(&ast),
             indexed_word: WordNode::build_indexed_word(&ast),
+            word_nodes: word_nodes.nodes,
             word_count: WordNode::count_words(&ast),
         })
     }

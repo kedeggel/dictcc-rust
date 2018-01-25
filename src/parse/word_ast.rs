@@ -7,7 +7,7 @@ use std::string::ToString;
 use std::borrow::Borrow;
 
 /// Parsing AST node
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WordNode<T: Borrow<str>> {
     /// text at root
     Word(T),
@@ -32,6 +32,18 @@ impl<'a, 'b> From<&'a WordNode<&'b str>> for WordNode<String> {
             Round(ref s) => Round(s.to_string()),
             Square(ref s) => Square(s.to_string()),
             Curly(ref s) => Curly(s.to_string()),
+        }
+    }
+}
+
+pub struct WordNodes<T: Borrow<str>> {
+    pub nodes: Vec<WordNode<T>>
+}
+
+impl<'a, 'b> From<&'a [WordNode<&'b str>]> for WordNodes<String> {
+    fn from(str_nodes: &'a [WordNode<&'b str>]) -> Self {
+        WordNodes {
+            nodes: str_nodes.iter().map( | node| node.into()).collect()
         }
     }
 }
