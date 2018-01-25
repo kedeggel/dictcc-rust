@@ -81,7 +81,7 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
                 word_class_group_by.into_iter().map(|(word_class_group, entries_group)| {
                     let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
 
-                    // TODO: left/right
+                    // TODO: left/right => left:left;right:right;bi:left
                     entries.sort_by(|left_entry, right_entry| {
                         let left = &left_entry.source.indexed_word;
                         let right = &right_entry.source.indexed_word;

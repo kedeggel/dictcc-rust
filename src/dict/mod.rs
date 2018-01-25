@@ -240,7 +240,6 @@ pub struct DictWord {
     /// not for sorting and not a keyword
     ///
     pub gender: Option<Gender>,
-    // TODO: Multiple Comments
     /// Syntax:
     /// `[foo]`
     ///
