@@ -151,7 +151,7 @@ pub struct DictEntry {
 
 impl DictEntry {
     /// Try to convert from ASTDictEntry into DictEntry
-    pub fn try_from(ast: &ASTDictEntry) -> DictResult<Self> {
+    pub fn try_from(ast: &ASTDictEntry<&str>) -> DictResult<Self> {
         let mut classes = Vec::new();
         for class in ast.word_classes.split_whitespace() {
             classes.push(WordClass::try_from(class)?);
@@ -273,7 +273,7 @@ pub struct DictWord {
 
 impl DictWord {
     /// Try to convert from a WordNode into a DictWord
-    fn try_from<'a>(ast: &[WordNode<'a>]) -> DictResult<Self> {
+    fn try_from<'a>(ast: &[WordNode<&'a str>]) -> DictResult<Self> {
         let gender = match WordNode::build_gender_tag_string(&ast) {
             Some(gender_string) => Some(gender_string.parse()?),
             None => None,
