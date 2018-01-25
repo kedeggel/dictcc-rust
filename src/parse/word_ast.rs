@@ -19,39 +19,6 @@ pub enum WordNode<'a> {
     Curly(&'a str),
 }
 
-impl<'a> ToOwned for WordNode<'a> {
-    type Owned = WordNodeOwned;
-
-    fn to_owned(&self) -> Self::Owned {
-        use self::WordNode::*;
-        use std::string::ToString;
-
-        match *self {
-            Word(ref s) => WordNodeOwned::Word(s.to_string()),
-            Angle(ref vec_s) => WordNodeOwned::Angle(vec_s.iter().map(ToString::to_string).collect()),
-            Round(ref s) => WordNodeOwned::Round(s.to_string()),
-            Square(ref s) => WordNodeOwned::Square(s.to_string()),
-            Curly(ref s) => WordNodeOwned::Curly(s.to_string()),
-        }
-    }
-}
-
-/// Owned Parsing AST node
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum WordNodeOwned {
-    /// text at root
-    Word(String),
-    /// abbreviations/acronyms
-    Angle(Vec<String>),
-    /// optional parts
-    Round(String),
-    /// visible comments
-    Square(String),
-    /// gender tags
-    Curly(String),
-}
-
-
 impl<'a> WordNode<'a> {
     /// Performs the conversion from str into WordNode
     pub fn try_from(word: &str) -> DictResult<Vec<WordNode>> {

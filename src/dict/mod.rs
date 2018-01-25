@@ -220,6 +220,7 @@ pub struct DictWord {
 // FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
 //pub language: Language,
 
+    // TODO: make a searchable keyword
     /// Syntax:
     /// `<foo>`
     /// `<foo, bar>`
@@ -239,6 +240,7 @@ pub struct DictWord {
     /// not for sorting and not a keyword
     ///
     pub gender: Option<Gender>,
+    // TODO: Multiple Comments
     /// Syntax:
     /// `[foo]`
     ///
@@ -255,12 +257,15 @@ pub struct DictWord {
     /// for sorting and a keyword
     ///
     pub word: String,
-    /// The word without the brackets of optional parts and lowercase.
+    /// The word without the brackets of optional parts and in lowercase.
     /// Is used for searching and sorting.
     ///
     ///  Syntax:
     /// `(a) Foo` -> `a foo`
     indexed_word: String,
+
+    // TODO:
+//    word_nodes: Vec<WordNode<???>>,
 
     /// The number of space separated words in this `DictWord`
     pub word_count: u8,
