@@ -59,6 +59,7 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
 
         let mut entries = query_result.entries;
 
+        // TODO: left/right
         entries.sort_unstable_by_key(DictEntry::get_max_word_count);
 
         let word_count_group_by = entries.into_iter().group_by(DictEntry::get_max_word_count);

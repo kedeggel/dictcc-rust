@@ -264,6 +264,9 @@ pub struct DictWord {
     /// `(a) Foo` -> `a foo`
     indexed_word: String,
 
+    // TODO:
+    // API for comment/acronyms/gender and remove existing fields
+    // Display
     /// The AST (abstract syntax tree) of the complete word.
     word_nodes: Vec<WordNode<String>>,
 
