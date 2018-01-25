@@ -6,7 +6,7 @@ use error::{DictError, DictResult};
 use failure::Backtrace;
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::html::HtmlDecodedDictEntry;
-use parse::word_ast::{WordNode, WordAST};
+use parse::word_ast::{WordNode, ASTDictEntry};
 use regex::{escape, RegexBuilder};
 
 use dict::grouped::DictQueryResultGrouped;
@@ -51,7 +51,7 @@ impl Dict {
         for record in records {
             let raw_entry: RawDictEntry = record?;
             let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
-            let word_ast = WordAST::from(&html_decoded_entry);
+            let word_ast = ASTDictEntry::from(&html_decoded_entry);
             if let Ok(entry) = DictEntry::try_from(&word_ast) {
                 entries.push(entry);
             };
@@ -150,8 +150,8 @@ pub struct DictEntry {
 }
 
 impl DictEntry {
-    /// Try to convert from WordAST into DictEntry
-    pub fn try_from(ast: &WordAST) -> DictResult<Self> {
+    /// Try to convert from ASTDictEntry into DictEntry
+    pub fn try_from(ast: &ASTDictEntry) -> DictResult<Self> {
         let mut classes = Vec::new();
         for class in ast.word_classes.split_whitespace() {
             classes.push(WordClass::try_from(class)?);
