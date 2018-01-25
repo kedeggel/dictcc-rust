@@ -3,8 +3,7 @@ extern crate csv;
 use std::path::Path;
 use std::fs::File;
 
-use error::DictResult;
-use error::DictError;
+use error::{DictResult, DictError};
 
 #[derive(Debug,Deserialize)]
 pub struct RawDictEntry {

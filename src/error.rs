@@ -41,10 +41,10 @@ pub enum DictError {
     IncompleteEntry(#[cause] csv::Error),
 
     #[fail(display = "Could not parse csv: {}", _0)]
-    CsvParse(#[cause] csv::Error),
+    CsvParse(#[cause] csv::Error, Backtrace),
 
     #[fail(display = "Could not decode HTML character references: {:?}", _0)]
-    HtmlDecode(htmlescape::DecodeErr),
+    HtmlDecode(htmlescape::DecodeErr, Backtrace),
 
     #[fail(display = "Could not parse {:?}: {:?}", word, cause)]
     WordASTParse {
@@ -59,23 +59,23 @@ pub enum DictError {
     },
 
     #[fail(display = "Parse error with context: {:?}", _0)]
-    Context(#[cause] Context<String>),
+    Context(#[cause] Context<String>, Backtrace),
 }
 
 impl From<csv::Error> for DictError {
     fn from(err: csv::Error) -> Self {
-        DictError::CsvParse(err)
+        DictError::CsvParse(err, Backtrace::new())
     }
 }
 
 impl From<htmlescape::DecodeErr> for DictError {
     fn from(err: htmlescape::DecodeErr) -> Self {
-        DictError::HtmlDecode(err)
+        DictError::HtmlDecode(err, Backtrace::new())
     }
 }
 
 impl From<Context<String>> for DictError {
     fn from(context: Context<String>) -> Self {
-        DictError::Context(context)
+        DictError::Context(context, Backtrace::new())
     }
 }

@@ -2,7 +2,6 @@ extern crate htmlescape;
 
 use parse::raw_csv::RawDictEntry;
 
-// TODO: use &str to avoid cloning
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {
     pub source: String,
