@@ -56,10 +56,6 @@ pub fn parse_test(path: &str) -> DictResult<()> {
 
         eprintln!("query = {:?}", query);
         let dqr = dq.query(&query);
-        for (i, res) in dqr.get_results().iter().enumerate() {
-            println!("Result {}: {}", i + 1, res);
-            println!("Result {} (verbose): {}", i + 1, res.to_long_string());
-        }
 
         println!("{}", dqr.into_grouped());
     }

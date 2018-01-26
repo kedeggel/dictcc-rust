@@ -155,8 +155,8 @@ impl Display for DictEntryWordClassGroup {
         // Complete rendering of word
         // Colored
         let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
-            let left = &entry.source.word;
-            let right = &entry.translation.word;
+            let left = &entry.source;
+            let right = &entry.translation;
 
             row![left, right]
         }).collect();
