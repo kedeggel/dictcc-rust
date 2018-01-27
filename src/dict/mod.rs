@@ -181,42 +181,6 @@ pub struct DictWord {
 // FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
 //pub language: Language,
 
-    // TODO: make a searchable keyword
-    /// Syntax:
-    /// `<foo>`
-    /// `<foo, bar>`
-    ///
-    /// Indexing:
-    /// not for sorting, but a keyword
-    ///
-//    pub acronyms: Vec<String>,
-    /// Syntax:
-    /// `{f}`
-    /// `{m}`
-    /// `{n}`
-    /// `{pl}`
-    /// `{sg}`
-    ///
-    /// Indexing:
-    /// not for sorting and not a keyword
-    ///
-//    pub gender: Option<Gender>,
-    /// Syntax:
-    /// `[foo]`
-    ///
-    /// Indexing:
-    /// not for sorting and not a keyword
-    ///
-//    pub comment: String,
-    /// The word with optional parts
-    ///
-    /// Syntax:
-    /// `(a) foo`
-    ///
-    /// Indexing:
-    /// for sorting and a keyword
-    ///
-//    pub word: String,
     /// The word without the brackets of optional parts and in lowercase.
     /// Is used for searching and sorting.
     ///
@@ -231,7 +195,7 @@ pub struct DictWord {
     word_nodes: WordNodes<String>,
 
     /// The number of space separated words in this `DictWord`
-    pub word_count: u8,
+    word_count: u8,
 }
 
 impl Display for DictWord {
@@ -252,6 +216,63 @@ impl DictWord {
 
     fn to_colored_string(&self) -> String {
         self.word_nodes.to_colored_string()
+    }
+
+    // TODO: make a searchable keyword
+    /// Syntax:
+    /// `<foo>`
+    /// `<foo, bar>`
+    ///
+    /// Indexing:
+    /// not for sorting, but a keyword
+    ///
+    pub fn acronyms(&self) -> Vec<String> {
+        self.word_nodes.build_acronyms()
+    }
+
+    /// Syntax:
+    /// `[foo]`
+    ///
+    /// Indexing:
+    /// not for sorting and not a keyword
+    ///
+    pub fn comments(&self) -> Vec<String> {
+        self.word_nodes.build_comments()
+    }
+
+    /// Syntax:
+    /// `{f}`
+    /// `{m}`
+    /// `{n}`
+    /// `{pl}`
+    /// `{sg}`
+    ///
+    /// Indexing:
+    /// not for sorting and not a keyword
+    ///
+    pub fn genders(&self) -> Vec<String> {
+        self.word_nodes.build_genders()
+    }
+
+    /// The word with optional parts
+    ///
+    /// Syntax:
+    /// `(a) foo`
+    ///
+    /// Indexing:
+    /// for sorting and a keyword
+    ///
+    pub fn word_with_optional_parts(&self) -> String {
+        self.word_nodes.build_word_with_optional_parts()
+    }
+
+    /// The word with optional parts
+    ///
+    /// Syntax:
+    /// `foo`
+    ///
+    pub fn plain_word(&self) -> String {
+        self.word_nodes.build_plain_word()
     }
 }
 

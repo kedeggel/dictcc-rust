@@ -171,9 +171,8 @@ impl<'a> WordNodes<&'a str> {
 }
 
 impl<T: Borrow<str>> WordNodes<T> {
-    // FIXME: handle multiple comments/acronyms/gender blocks consistently
 
-    pub fn build_comment_string(&self) -> String {
+    pub fn build_comments(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter()
@@ -185,7 +184,7 @@ impl<T: Borrow<str>> WordNodes<T> {
             }).collect()
     }
 
-    pub fn build_acronyms_vec(&self) -> Vec<String> {
+    pub fn build_acronyms(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter()
@@ -199,7 +198,7 @@ impl<T: Borrow<str>> WordNodes<T> {
             .collect()
     }
 
-    pub fn build_gender_tag_string(&self) -> Option<String> {
+    pub fn build_genders(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter().filter_map(|node| {
@@ -207,7 +206,7 @@ impl<T: Borrow<str>> WordNodes<T> {
                 Curly(ref s) => Some(s.borrow().to_string()),
                 _ => None,
             }
-        }).next()
+        }).collect()
     }
 
     pub fn build_word_with_optional_parts(&self) -> String {
@@ -220,6 +219,19 @@ impl<T: Borrow<str>> WordNodes<T> {
                 }
                 ref node @ Round(_) => {
                     Some(node.to_string())
+                }
+                _ => None,
+            }
+        }).collect::<Vec<_>>().join(" ")
+    }
+
+    pub fn build_plain_word(&self) -> String {
+        use self::WordNode::*;
+
+        self.nodes.iter().filter_map(|node| {
+            match *node {
+                Word(ref s) => {
+                    s.borrow().to_string()
                 }
                 _ => None,
             }
