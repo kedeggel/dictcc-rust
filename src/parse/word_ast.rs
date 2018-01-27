@@ -231,7 +231,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         self.nodes.iter().filter_map(|node| {
             match *node {
                 Word(ref s) => {
-                    s.borrow().to_string()
+                    Some(s.borrow().to_string())
                 }
                 _ => None,
             }
