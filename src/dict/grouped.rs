@@ -4,6 +4,8 @@ use itertools::Itertools;
 use itertools::GroupBy;
 use std::vec::IntoIter;
 
+// TODO: word classes table column
+
 /// Used for grouping entries in the output
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
 enum WordClassesGroup {
