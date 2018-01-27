@@ -28,7 +28,7 @@ pub fn parse_test(path: &str) -> DictResult<()> {
         println!("Direction (left, right or both):");
         let mut direction = String::new();
         ::std::io::stdin().read_line(&mut direction).unwrap();
-        match direction.trim_right_matches('\n') {
+        match direction.trim_right_matches(|c| c == '\n' || c == '\r') {
             "right" => { dq.set_query_direction(QueryDirection::ToRight); }
             "left" => { dq.set_query_direction(QueryDirection::ToLeft); }
             "both" => { dq.set_query_direction(QueryDirection::Bidirectional); }
@@ -39,7 +39,7 @@ pub fn parse_test(path: &str) -> DictResult<()> {
         println!("Searchtype (word, exact or regex):");
         let mut qtype = String::new();
         ::std::io::stdin().read_line(&mut qtype).unwrap();
-        match qtype.trim_right_matches('\n') {
+        match qtype.trim_right_matches(|c| c == '\n' || c == '\r') {
             "word" => { dq.word(); }
             "exact" => { dq.exact(); }
             "regex" => { dq.regex(); }
@@ -49,7 +49,7 @@ pub fn parse_test(path: &str) -> DictResult<()> {
         println!("Search:");
         let mut query = String::new();
         ::std::io::stdin().read_line(&mut query).unwrap();
-        query = query.trim_right_matches("\n").to_string();
+        query = query.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
         if query == "" {
             break
         }

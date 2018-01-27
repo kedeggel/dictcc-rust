@@ -18,6 +18,7 @@ mod grouped;
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResult {
     entries: Vec<DictEntry>,
+    query_direction: QueryDirection,
 }
 
 impl DictQueryResult {
@@ -26,7 +27,7 @@ impl DictQueryResult {
     }
 
     pub fn into_grouped(self) -> DictQueryResultGrouped {
-        self.into()
+        DictQueryResultGrouped::from(self)
     }
 }
 
@@ -120,10 +121,12 @@ impl<'a> DictQuery<'a> {
                         || regexp.is_match(&entry.translation.indexed_word),
                 }
             }).cloned().collect(),
+            query_direction: self.query_direction,
         }
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 enum QueryType {
     Exact,
     Regex,
@@ -245,6 +248,10 @@ impl DictWord {
             word_count: word_nodes.count_words(),
             word_nodes,
         })
+    }
+
+    fn to_colored_string(&self) -> String {
+        self.word_nodes.to_colored_string()
     }
 }
 

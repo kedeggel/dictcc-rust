@@ -1,6 +1,8 @@
-
 use super::*;
 
+use itertools::Itertools;
+use itertools::GroupBy;
+use std::vec::IntoIter;
 
 /// Used for grouping entries in the output
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
@@ -53,19 +55,36 @@ impl Display for DictQueryResultGrouped {
     }
 }
 
+
+
 impl From<DictQueryResult> for DictQueryResultGrouped {
     fn from(query_result: DictQueryResult) -> Self {
-        use itertools::Itertools;
+        fn group_entries<G, I>(mut entries: Vec<I>, by: fn(&I) -> G)
+                               -> GroupBy<G, IntoIter<I>, fn(&I) -> G>
+            where G: Ord {
+            entries.sort_unstable_by_key(by);
 
-        let mut entries = query_result.entries;
+            entries.into_iter().group_by(by)
+        }
 
-        // TODO: left/right
-        entries.sort_unstable_by_key(DictEntry::get_max_word_count);
+        let query_direction = query_result.query_direction;
+        let entries = query_result.entries;
 
-        let word_count_group_by = entries.into_iter().group_by(DictEntry::get_max_word_count);
+        let get_word_count: fn(&DictEntry) -> u8 = match query_direction {
+            QueryDirection::ToRight => |entry: &DictEntry| {
+                entry.source.word_count
+            },
+            QueryDirection::Bidirectional => DictEntry::get_max_word_count,
+            QueryDirection::ToLeft => |entry: &DictEntry| {
+                entry.translation.word_count
+            },
+        };
+
+        let word_count_group_by =
+            group_entries(entries, get_word_count);
 
         let grouped_entries: Vec<_> = word_count_group_by.into_iter().map(|(word_count, same_word_count_group)| {
-            let mut same_word_count_pairs: Vec<(WordClassesGroup, DictEntry)> = same_word_count_group
+            let same_word_count_pairs: Vec<(WordClassesGroup, DictEntry)> = same_word_count_group
                 .map(|entry| {
                     let word_classes_group: WordClassesGroup = entry.word_classes.as_slice().into();
 
@@ -73,22 +92,32 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
                 })
                 .collect();
 
-            same_word_count_pairs.sort_unstable_by_key(|&(word_class_group, _)| word_class_group);
-
             let word_class_group_by =
-                same_word_count_pairs.into_iter().group_by(|&(word_class_group, _)| word_class_group);
+                group_entries(same_word_count_pairs, |&(word_class_group, _)| word_class_group);
 
             let vec_word_class_group: Vec<DictEntryWordClassGroup> =
                 word_class_group_by.into_iter().map(|(word_class_group, entries_group)| {
                     let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
 
-                    // TODO: left/right => left:left;right:right;bi:left
-                    entries.sort_by(|left_entry, right_entry| {
+                    let cmp_left = |left_entry: &DictEntry, right_entry: &DictEntry| {
                         let left = &left_entry.source.indexed_word;
                         let right = &right_entry.source.indexed_word;
 
                         left.cmp(&right)
-                    });
+                    };
+
+                    let cmp_right = |left_entry: &DictEntry, right_entry: &DictEntry| {
+                        let left = &left_entry.translation.indexed_word;
+                        let right = &right_entry.translation.indexed_word;
+
+                        left.cmp(&right)
+                    };
+
+                    match query_direction {
+                        QueryDirection::ToRight |
+                        QueryDirection::Bidirectional => entries.sort_by(cmp_left),
+                        QueryDirection::ToLeft => entries.sort_by(cmp_right),
+                    };
 
                     DictEntryWordClassGroup {
                         word_count,
@@ -151,12 +180,9 @@ impl Display for DictEntryWordClassGroup {
         use prettytable;
         use prettytable::Table;
 
-        // TODO:
-        // Complete rendering of word
-        // Colored
         let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
-            let left = &entry.source;
-            let right = &entry.translation;
+            let left = &entry.source.to_colored_string();
+            let right = &entry.translation.to_colored_string();
 
             row![left, right]
         }).collect();

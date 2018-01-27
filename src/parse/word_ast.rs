@@ -62,6 +62,33 @@ impl<'a, T: Borrow<str>> fmt::Display for WordNode<T> {
     }
 }
 
+impl<'a, T: Borrow<str>> WordNode<T> {
+    fn to_colored_string(&self) -> String {
+        use self::WordNode::*;
+
+        use colored::Colorize;
+
+        match *self {
+            ref node @ Word(_) => {
+                node.to_string()
+            }
+            ref node @ Angle(_) => {
+                node.to_string().red().to_string()
+            }
+            ref node @ Round(_) => {
+                node.to_string().green().to_string()
+            }
+            ref node @ Square(_) => {
+                node.to_string().blue().to_string()
+            }
+            ref node @ Curly(_) => {
+                node.to_string().cyan().to_string()
+            }
+        }
+    }
+}
+
+
 /// "Newtype" struct of a `Vec<WordNode<T>>`.
 /// Provides useful methods for extraction of parts of the word.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -222,6 +249,13 @@ impl<T: Borrow<str>> WordNodes<T> {
             }
         }).count() as u8
     }
+
+    pub fn to_colored_string(&self) -> String {
+        self.nodes.iter()
+            .map(|word_node| word_node.to_colored_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
 }
 
 /// Word Abstract-Syntax-Tree
@@ -324,7 +358,7 @@ mod tests {
     #[test]
     fn test_word_node_display() {
         assert_eq!("foo", WordNode::Word("foo").to_string());
-        assert_eq!("<>", WordNode::Angle(vec![]).to_string());
+        assert_eq!("<>", WordNode::Angle::<&str>(vec![]).to_string());
         assert_eq!("<foo>", WordNode::Angle(vec!["foo"]).to_string());
         assert_eq!("<foo, bar>", WordNode::Angle(vec!["foo", "bar"]).to_string());
         assert_eq!("(foo)", WordNode::Round("foo").to_string());
