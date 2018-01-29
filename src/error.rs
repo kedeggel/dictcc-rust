@@ -28,6 +28,11 @@ pub enum DictError {
         backtrace: Backtrace,
     },
 
+    #[fail(display = "Language code not found")]
+    LanguageCodeNotFound {
+        backtrace: Backtrace,
+    },
+
     #[fail(display = "{}", _0)]
     Io(#[cause] io::Error),
 

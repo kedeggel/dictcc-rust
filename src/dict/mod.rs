@@ -1,16 +1,19 @@
+extern crate csv;
+
 use std::str::FromStr;
 use std::fmt::{self, Display, Formatter};
 use std::path::Path;
+use std::io::{BufRead, BufReader};
+use std::fs::File;
 
 use error::{DictError, DictResult};
 use failure::Backtrace;
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::html::HtmlDecodedDictEntry;
-use parse::word_ast::WordNodesDictEntry;
-use regex::{escape, RegexBuilder};
+use parse::word_ast::{WordNodesDictEntry, WordNodes};
+use regex::{escape, RegexBuilder, Regex, Captures};
 
 use dict::grouped::DictQueryResultGrouped;
-use parse::word_ast::WordNodes;
 
 mod grouped;
 
@@ -36,12 +39,15 @@ impl DictQueryResult {
 pub struct Dict {
     /// List of all dictionary entries
     entries: Vec<DictEntry>,
+
+    // Languages
+    languages: DictLanguagePair,
 }
 
 impl Dict {
     pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
-        let mut reader = get_csv_reader_from_path(path)?;
-
+        let mut reader = get_csv_reader_from_path(&path)?;
+        let languages = get_language_pair_from_path(&path)?;
         let records = reader
             .deserialize()
             .filter(incomplete_records_filter);
@@ -57,12 +63,23 @@ impl Dict {
             };
         }
         Ok(Self {
-            entries
+            entries,
+            languages,
         })
     }
 
     pub fn get_entries(&self) -> &[DictEntry] {
         &self.entries
+    }
+
+    /// Return the left column's language of the dictionary file
+    pub fn get_left_language(&self) -> &Language {
+        &self.languages.left_language
+    }
+
+    /// Return the right column's language of the dictionary file
+    pub fn get_right_language(&self) -> &Language {
+        &self.languages.right_language
     }
 
     pub fn query(&self) -> DictQuery {
@@ -72,6 +89,37 @@ impl Dict {
             query_direction: QueryDirection::Bidirectional,
         }
     }
+}
+
+fn get_language_pair_from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLanguagePair> {
+    let file = File::open(&path).map_err(|err| DictError::FileOpen {
+        path: format!("{}", path.as_ref().display()),
+        cause: csv::Error::from(err),
+    })?;
+
+    let mut header = String::new();
+    let _ = BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
+        path: format!("{}", path.as_ref().display()),
+        cause: csv::Error::from(err),
+    })?;
+
+    // Since the regex cannot be changed, unwrap is ok here
+    let re = Regex::new("([A-Z]{2})-([A-Z]{2})").unwrap();
+    let captures = |s| re.captures(s);
+    let groups = match header.lines().next().and_then(captures) {
+        Some(mat) => mat,
+        None => return Err(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })
+    };
+
+    fn get_lang(idx: usize, captures: &Captures) -> DictResult<Language> {
+        Language::from_str(captures.get(idx).
+            ok_or(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })?.as_str())
+    }
+
+    Ok(DictLanguagePair {
+        left_language: get_lang(1, &groups)?,
+        right_language: get_lang(2, &groups)?,
+    })
 }
 
 pub struct DictQuery<'a> {
@@ -276,11 +324,60 @@ impl DictWord {
 /// Lists all available languages
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Language {
-    /// German
-    DE,
+    /// Albanian
+    SQ,
+    /// Bosnian
+    BS,
+    /// Bulgarian
+    BG,
+    /// Croatioan
+    HR,
+    /// Czech
+    CS,
+    /// Danish
+    DA,
+    /// Dutch
+    NL,
     /// English
     EN,
-    // TODO: List all available languages
+    /// Esperanto
+    EO,
+    /// Finnish
+    FI,
+    /// French
+    FR,
+    /// German
+    DE,
+    /// Greek
+    EL,
+    /// Hungarian
+    HU,
+    /// Icelandic
+    IS,
+    /// Italian
+    IT,
+    /// Latin
+    LA,
+    /// Norwegian
+    NO,
+    /// Polish
+    PL,
+    /// Portuguese
+    PT,
+    /// Romanian
+    RO,
+    /// Russian
+    RU,
+    /// Serbian
+    SR,
+    /// Slovak
+    SK,
+    /// Spanish
+    ES,
+    /// Swedish
+    SV,
+    /// Turkish
+    TR,
     /// Other language that are not listed explicitly
     Other { language_code: String },
 }
@@ -294,12 +391,79 @@ impl FromStr for Language {
             return Err(DictError::InvalidLanguageCode { lang: s.to_string(), backtrace: Backtrace::new() });
         }
         Ok(match s {
-            "DE" => DE,
+            "SQ" => SQ,
+            "BS" => BS,
+            "BG" => BG,
+            "HR" => HR,
+            "CS" => CS,
+            "DA" => DA,
+            "NL" => NL,
             "EN" => EN,
-            // ...
+            "EO" => EO,
+            "FI" => FI,
+            "FR" => FR,
+            "DE" => DE,
+            "EL" => EL,
+            "HU" => HU,
+            "IS" => IS,
+            "IT" => IT,
+            "LA" => LA,
+            "NO" => NO,
+            "PL" => PL,
+            "PT" => PT,
+            "RO" => RO,
+            "RU" => RU,
+            "SR" => SR,
+            "SK" => SK,
+            "ES" => ES,
+            "SV" => SV,
+            "TR" => TR,
             _ => Other { language_code: s.to_string() }
         })
     }
+}
+
+impl Display for Language {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        use self::Language::*;
+
+        match *self {
+            SQ => write!(f, "Albanian"),
+            BS => write!(f, "Bosnian"),
+            BG => write!(f, "Bulgarian"),
+            HR => write!(f, "Croatioan"),
+            CS => write!(f, "Czech"),
+            DA => write!(f, "Danish"),
+            NL => write!(f, "Dutch"),
+            EN => write!(f, "English"),
+            EO => write!(f, "Esperanto"),
+            FI => write!(f, "Finnish"),
+            FR => write!(f, "French"),
+            DE => write!(f, "German"),
+            EL => write!(f, "Greek"),
+            HU => write!(f, "Hungarian"),
+            IS => write!(f, "Icelandic"),
+            IT => write!(f, "Italian"),
+            LA => write!(f, "Latin"),
+            NO => write!(f, "Norwegian"),
+            PL => write!(f, "Polish"),
+            PT => write!(f, "Portuguese"),
+            RO => write!(f, "Romanian"),
+            RU => write!(f, "Russian"),
+            SR => write!(f, "Serbian"),
+            SK => write!(f, "Slovak"),
+            ES => write!(f, "Spanish"),
+            SV => write!(f, "Swedish"),
+            TR => write!(f, "Turkish"),
+            Other { ref language_code } => write!(f, "{}", language_code),
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+struct DictLanguagePair {
+    left_language: Language,
+    right_language: Language,
 }
 
 /// Lists all available genders
