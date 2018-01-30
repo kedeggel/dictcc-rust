@@ -14,6 +14,7 @@ extern crate regex;
 #[macro_use]
 extern crate prettytable;
 extern crate itertools;
+extern crate colored;
 
 pub mod parse;
 pub mod dict;

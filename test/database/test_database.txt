@@ -11,6 +11,6 @@ foo	foo	noun
 foo bar	foo bar	noun
 foo bar baz	foo bar baz	noun
 foo bar baz qux	foo bar baz qux	noun
-c	c	adj
+c	a	adj
 B	B	adj
-a	a	adj
+a	c	adj

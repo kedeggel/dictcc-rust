@@ -6,7 +6,7 @@ use error::{DictError, DictResult};
 use failure::Backtrace;
 use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::html::HtmlDecodedDictEntry;
-use parse::word_ast::{WordNode, ASTDictEntry};
+use parse::word_ast::WordNodesDictEntry;
 use regex::{escape, RegexBuilder};
 
 use dict::grouped::DictQueryResultGrouped;
@@ -18,6 +18,7 @@ mod grouped;
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResult {
     entries: Vec<DictEntry>,
+    query_direction: QueryDirection,
 }
 
 impl DictQueryResult {
@@ -26,11 +27,9 @@ impl DictQueryResult {
     }
 
     pub fn into_grouped(self) -> DictQueryResultGrouped {
-        self.into()
+        DictQueryResultGrouped::from(self)
     }
 }
-
-
 
 /// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -52,8 +51,8 @@ impl Dict {
         for record in records {
             let raw_entry: RawDictEntry = record?;
             let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
-            let word_ast = ASTDictEntry::from(&html_decoded_entry);
-            if let Ok(entry) = DictEntry::try_from(&word_ast) {
+            let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
+            if let Ok(entry) = DictEntry::try_from(word_ast) {
                 entries.push(entry);
             };
         }
@@ -122,10 +121,12 @@ impl<'a> DictQuery<'a> {
                         || regexp.is_match(&entry.translation.indexed_word),
                 }
             }).cloned().collect(),
+            query_direction: self.query_direction,
         }
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 enum QueryType {
     Exact,
     Regex,
@@ -151,52 +152,17 @@ pub struct DictEntry {
 }
 
 impl DictEntry {
-    /// Try to convert from ASTDictEntry into DictEntry
-    pub fn try_from(ast: &ASTDictEntry<&str>) -> DictResult<Self> {
+    /// Try to convert from WordNodesDictEntry into DictEntry
+    pub fn try_from(word_nodes_dict_entry: WordNodesDictEntry<String>) -> DictResult<Self> {
         let mut classes = Vec::new();
-        for class in ast.word_classes.split_whitespace() {
+        for class in word_nodes_dict_entry.word_classes.split_whitespace() {
             classes.push(WordClass::try_from(class)?);
         }
         Ok(DictEntry {
-            source: DictWord::try_from(&ast.source)?,
-            translation: DictWord::try_from(&ast.translation)?,
+            source: DictWord::try_from(word_nodes_dict_entry.source)?,
+            translation: DictWord::try_from(word_nodes_dict_entry.translation)?,
             word_classes: classes,
         })
-    }
-
-    pub fn to_long_string(&self) -> String {
-        format!("{} {}{}{}\t<->\t{} {}{}{}\t{:?}",
-                self.source.word, Self::format_acronyms(&self.source.acronyms),
-                Self::format_gender(&self.source.gender), Self::format_comment(&self.source.comment),
-                self.translation.word, Self::format_acronyms(&self.translation.acronyms),
-                Self::format_gender(&self.translation.gender),
-                Self::format_comment(&self.translation.comment), self.word_classes)
-    }
-
-    fn format_acronyms(acronyms: &Vec<String>) -> String {
-        let mut formatted = String::new();
-        if acronyms.len() > 0 {
-            acronyms.iter().for_each(|s| {
-                formatted.push_str(s);
-                formatted.push(' ');
-            });
-            formatted = format!("<{}> ", formatted.trim());
-        }
-        formatted
-    }
-
-    fn format_gender(gender: &Option<Gender>) -> String {
-        match *gender {
-            Some(ref g) => format!("{{{:?}}}", g),
-            None => String::new()
-        }
-    }
-
-    fn format_comment(comment: &String) -> String {
-        match comment.trim() {
-            "" => String::new(),
-            _ => format!("[{}] ", comment),
-        }
     }
 
     fn get_max_word_count(&self) -> u8 {
@@ -209,17 +175,45 @@ impl DictEntry {
     }
 }
 
-impl Display for DictEntry {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}\t<->\t{}\t{:?}", self.source.word, self.translation.word, self.word_classes)
-    }
-}
-
 /// Structure that contains all fields of a dictionary entry from dict.cc
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictWord {
 // FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
 //pub language: Language,
+
+    /// The word without the brackets of optional parts and in lowercase.
+    /// Is used for searching and sorting.
+    ///
+    ///  Syntax:
+    /// `(a) Foo` -> `a foo`
+    indexed_word: String,
+
+    /// The AST (abstract syntax tree) of the complete word.
+    word_nodes: WordNodes<String>,
+
+    /// The number of space separated words in this `DictWord`
+    word_count: u8,
+}
+
+impl Display for DictWord {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(&self.word_nodes.to_string())
+    }
+}
+
+impl DictWord {
+    /// Try to convert from a WordNode into a DictWord
+    fn try_from(word_nodes: WordNodes<String>) -> DictResult<Self> {
+        Ok(DictWord {
+            indexed_word: word_nodes.build_indexed_word(),
+            word_count: word_nodes.count_words(),
+            word_nodes,
+        })
+    }
+
+    fn to_colored_string(&self) -> String {
+        self.word_nodes.to_colored_string()
+    }
 
     // TODO: make a searchable keyword
     /// Syntax:
@@ -229,7 +223,20 @@ pub struct DictWord {
     /// Indexing:
     /// not for sorting, but a keyword
     ///
-    pub acronyms: Vec<String>,
+    pub fn acronyms(&self) -> Vec<String> {
+        self.word_nodes.build_acronyms()
+    }
+
+    /// Syntax:
+    /// `[foo]`
+    ///
+    /// Indexing:
+    /// not for sorting and not a keyword
+    ///
+    pub fn comments(&self) -> Vec<String> {
+        self.word_nodes.build_comments()
+    }
+
     /// Syntax:
     /// `{f}`
     /// `{m}`
@@ -240,14 +247,10 @@ pub struct DictWord {
     /// Indexing:
     /// not for sorting and not a keyword
     ///
-    pub gender: Option<Gender>,
-    /// Syntax:
-    /// `[foo]`
-    ///
-    /// Indexing:
-    /// not for sorting and not a keyword
-    ///
-    pub comment: String,
+    pub fn genders(&self) -> Vec<String> {
+        self.word_nodes.build_genders()
+    }
+
     /// The word with optional parts
     ///
     /// Syntax:
@@ -256,40 +259,17 @@ pub struct DictWord {
     /// Indexing:
     /// for sorting and a keyword
     ///
-    pub word: String,
-    /// The word without the brackets of optional parts and in lowercase.
-    /// Is used for searching and sorting.
+    pub fn word_with_optional_parts(&self) -> String {
+        self.word_nodes.build_word_with_optional_parts()
+    }
+
+    /// The word with optional parts
     ///
-    ///  Syntax:
-    /// `(a) Foo` -> `a foo`
-    indexed_word: String,
-
-    /// The AST (abstract syntax tree) of the complete word.
-    word_nodes: Vec<WordNode<String>>,
-
-    /// The number of space separated words in this `DictWord`
-    pub word_count: u8,
-}
-
-impl DictWord {
-    /// Try to convert from a WordNode into a DictWord
-    fn try_from<'a>(ast: &[WordNode<&'a str>]) -> DictResult<Self> {
-        let gender = match WordNode::build_gender_tag_string(&ast) {
-            Some(gender_string) => Some(gender_string.parse()?),
-            None => None,
-        };
-
-        let word_nodes: WordNodes<String> = ast.into();
-
-        Ok(DictWord {
-            acronyms: WordNode::build_acronyms_vec(&ast),
-            gender,
-            comment: WordNode::build_comment_string(&ast),
-            word: WordNode::build_word_with_optional_parts(&ast),
-            indexed_word: WordNode::build_indexed_word(&ast),
-            word_nodes: word_nodes.nodes,
-            word_count: WordNode::count_words(&ast),
-        })
+    /// Syntax:
+    /// `foo`
+    ///
+    pub fn plain_word(&self) -> String {
+        self.word_nodes.build_plain_word()
     }
 }
 
