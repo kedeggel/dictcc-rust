@@ -10,6 +10,9 @@ use dictcc::dict::Dict;
 use dictcc::error::DictResult;
 use std::iter::once;
 
+// TODO: Caching of database parameter?
+// TODO: Interactive mode?
+
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
 struct Cli {

@@ -33,5 +33,3 @@ required-features = ["cli"]
 [[bin]]
 name = "dictcc-debug"
 path = "src/bin/debug.rs"
-
-
