@@ -18,4 +18,4 @@ extern crate colored;
 
 pub mod parse;
 pub mod dict;
-mod error;
+pub mod error;
