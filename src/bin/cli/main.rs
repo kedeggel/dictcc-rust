@@ -1,28 +1,30 @@
+extern crate dictcc;
 extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
 
 use structopt::StructOpt;
+use dictcc::dict::QueryType;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "example", about = "An example of StructOpt usage.")]
+#[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
 struct Cli {
-    /// A flag, true if used in the command line.
-    #[structopt(short = "d", long = "debug", help = "Activate debug mode")]
-    debug: bool,
+    /// Path to the dict.cc database file.
+    #[structopt(short = "d", long = "database")]
+    database_path: String,
 
-    /// An argument of type float, with a default value.
-    #[structopt(short = "s", long = "speed", help = "Set speed", default_value = "42")]
-    speed: f64,
+    /// In which language the query is written. If not specified, the query is bidirectional.
+    #[structopt(short = "l", long = "language")]
+    language: Option<String>,
 
-    /// Needed parameter, the first on the command line.
-    #[structopt(help = "Input file")]
-    input: String,
+    #[structopt(short = "t", long = "type")]
+    query_type: QueryType,
 
-    /// An optional parameter, will be `None` if not present on the
-    /// command line.
-    #[structopt(help = "Output file, stdout if not present")]
-    output: Option<String>,
+    /// First query term.
+    query: String,
+
+    /// Rest of the query.
+    query_rest: Vec<String>,
 }
 
 fn main() {

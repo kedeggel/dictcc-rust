@@ -175,10 +175,27 @@ impl<'a> DictQuery<'a> {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-enum QueryType {
+pub enum QueryType {
     Exact,
     Regex,
     Word,
+}
+
+impl FromStr for QueryType {
+    type Err = DictError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::QueryType::*;
+
+        Ok(match s.to_lowercase().as_str() {
+            "e" | "exact" => Exact,
+            "r" | "regex" => Regex,
+            "w" | "word" => Word,
+            unknown => Err(DictError::UnknownQueryType {
+                query_type: unknown.to_string(), backtrace: Backtrace::new()
+            })?
+        })
+    }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]

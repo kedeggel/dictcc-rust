@@ -22,6 +22,11 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
+    #[fail(display = "Unknown query type: {}", query_type)]
+    UnknownQueryType {
+        query_type: String,
+        backtrace: Backtrace,
+    },
     #[fail(display = "Invalid language code: {}", lang)]
     InvalidLanguageCode {
         lang: String,
