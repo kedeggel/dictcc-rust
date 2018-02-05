@@ -407,7 +407,7 @@ impl FromStr for Language {
         if s.len() != 2 {
             return Err(DictError::InvalidLanguageCode { lang: s.to_string(), backtrace: Backtrace::new() });
         }
-        Ok(match s {
+        Ok(match s.to_uppercase().as_str() {
             "SQ" => SQ,
             "BS" => BS,
             "BG" => BG,
