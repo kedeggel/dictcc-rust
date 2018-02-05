@@ -39,8 +39,8 @@ fn main() {
     println!("{:?}", cli);
 
     if let Err(err) = run_query(cli) {
-        println!("{}", err);
-        println!("{:?}", err);
+        eprintln!("{}", err);
+        std::process::exit(1);
     }
 }
 
@@ -61,6 +61,10 @@ fn run_query(cli: Cli) -> DictResult<()> {
     query.set_type(cli.query_type);
 
     let query_result = query.execute();
+
+    let query_result_grouped = query_result.into_grouped();
+
+    println!("{}", query_result_grouped);
 
     Ok(())
 }
