@@ -82,9 +82,15 @@ impl Dict {
         &self.languages.right_language
     }
 
-    pub fn query(&self) -> DictQuery {
+    /// Return the language pair of the dictionary.
+    pub fn get_language_pair(&self) -> &DictLanguagePair {
+        &self.languages
+    }
+
+    pub fn query<'a, 'b>(&'a self, query_term: &'b str) -> DictQuery<'a, 'b> {
         DictQuery {
             dict: &self,
+            query_term,
             query_type: QueryType::Word,
             query_direction: QueryDirection::Bidirectional,
         }
@@ -122,42 +128,72 @@ fn get_language_pair_from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLangua
     })
 }
 
-pub struct DictQuery<'a> {
+pub struct DictQuery<'a, 'b> {
     dict: &'a Dict,
+    query_term: &'b str,
     query_type: QueryType,
     query_direction: QueryDirection,
 }
 
-impl<'a> DictQuery<'a> {
-    pub fn set_query_direction(&mut self, query_direction: QueryDirection) -> &Self {
+impl<'a, 'b> DictQuery<'a, 'b> {
+    /// Set the query direction.
+    pub fn set_direction(&mut self, query_direction: QueryDirection) -> &mut Self {
         self.query_direction = query_direction;
         self
     }
 
+    /// Set the query type.
+    pub fn set_type(&mut self, query_type: QueryType) -> &mut Self {
+        self.query_type = query_type;
+        self
+    }
+
+    /// Set the query term.
+    pub fn set_term<'c>(self, query_term: &'c str) -> DictQuery<'a, 'c> {
+        DictQuery {
+            dict: self.dict,
+            query_term,
+            query_type: self.query_type,
+            query_direction: self.query_direction,
+        }
+    }
+
+    /// Sets the query direction based on the given source language.
+    /// Convenience function for `set_query_direction`
+    pub fn source_language(&mut self, source_language: &Language) -> DictResult<&mut Self> {
+        let query_direction = self.dict.get_language_pair().infer_query_direction(&source_language)?;
+        self.set_direction(query_direction);
+        Ok(self)
+    }
+
     /// Every entry that contains the query-word is a hit (default!)
-    pub fn word(&mut self) -> &Self {
-        self.query_type = QueryType::Word;
+    /// Convenience function for `set_query_type`
+    pub fn word(&mut self) -> &mut Self {
+        self.set_type(QueryType::Word);
         self
     }
 
     /// Search for exact matches
-    pub fn exact(&mut self) -> &Self {
-        self.query_type = QueryType::Exact;
+    /// Convenience function for `set_query_type`
+    pub fn exact(&mut self) -> &mut Self {
+        self.set_type(QueryType::Exact);
         self
     }
 
     /// Search for regex, so the user can specify by himself what he wants to match
-    pub fn regex(&mut self) -> &Self {
-        self.query_type = QueryType::Regex;
+    /// Convenience function for `set_query_type`
+    pub fn regex(&mut self) -> &mut Self {
+        self.set_type(QueryType::Regex);
         self
     }
 
-    pub fn query(&self, query: &str) -> DictQueryResult {
+    /// Execute the query.
+    pub fn execute(&self) -> DictQueryResult {
         let regexp = match self.query_type {
             // TODO: remove unwrap
-            QueryType::Word => RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", escape(query))).case_insensitive(true).build().unwrap(),
-            QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(query))).case_insensitive(true).build().unwrap(),
-            QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", query)).case_insensitive(true).build().unwrap(),
+            QueryType::Word => RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", escape(self.query_term))).case_insensitive(true).build().unwrap(),
+            QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(self.query_term))).case_insensitive(true).build().unwrap(),
+            QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", self.query_term)).case_insensitive(true).build().unwrap(),
         };
 
         DictQueryResult {
@@ -192,7 +228,8 @@ impl FromStr for QueryType {
             "r" | "regex" => Regex,
             "w" | "word" => Word,
             unknown => Err(DictError::UnknownQueryType {
-                query_type: unknown.to_string(), backtrace: Backtrace::new()
+                query_type: unknown.to_string(),
+                backtrace: Backtrace::new(),
             })?
         })
     }
@@ -477,11 +514,28 @@ impl Display for Language {
     }
 }
 
+/// A pair of two languages. Identifies the languages of a single translation database file.
 #[derive(Clone, Eq, PartialEq, Debug)]
-struct DictLanguagePair {
+pub struct DictLanguagePair {
     left_language: Language,
     right_language: Language,
 }
+
+impl DictLanguagePair {
+    pub fn infer_query_direction(&self, source_language: &Language) -> DictResult<QueryDirection> {
+        if *source_language == self.left_language {
+            Ok(QueryDirection::ToRight)
+        } else if *source_language == self.right_language {
+            Ok(QueryDirection::ToLeft)
+        } else {
+            Err(DictError::InvalidSourceLanguage {
+                source_language: source_language.clone(),
+                backtrace: Backtrace::new(),
+            })
+        }
+    }
+}
+
 
 /// Lists all available genders
 #[derive(Clone, Eq, PartialEq, Debug)]
