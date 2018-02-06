@@ -280,9 +280,6 @@ impl DictEntry {
 /// Structure that contains all fields of a dictionary entry from dict.cc
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictWord {
-// FIXME: evaluate where the best place for the language tag is (space constraints and internal representation?)
-//pub language: Language,
-
     /// The word without the brackets of optional parts and in lowercase.
     /// Is used for searching and sorting.
     ///
