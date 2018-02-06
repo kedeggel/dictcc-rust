@@ -4,8 +4,6 @@ use itertools::Itertools;
 use itertools::GroupBy;
 use std::vec::IntoIter;
 
-// TODO: word classes table column
-
 /// Used for grouping entries in the output
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
 enum WordClassesGroup {
@@ -56,7 +54,6 @@ impl Display for DictQueryResultGrouped {
         f.write_str(&table.to_string())
     }
 }
-
 
 
 impl From<DictQueryResult> for DictQueryResultGrouped {
@@ -182,11 +179,14 @@ impl Display for DictEntryWordClassGroup {
         use prettytable;
         use prettytable::Table;
 
+        // TODO: word classes filter (redundant classes)
         let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
             let left = &entry.source.to_colored_string();
             let right = &entry.translation.to_colored_string();
 
-            row![left, right]
+            let word_classes = &entry.word_classes.iter().map(|word_class| format!("{:?}", word_class)).collect::<Vec<_>>().join(", ");
+
+            row![left, right, word_classes]
         }).collect();
 
         let mut entry_table = Table::init(entry_rows);

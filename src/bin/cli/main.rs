@@ -12,6 +12,7 @@ use std::iter::once;
 
 // TODO: Caching of database parameter?
 // TODO: Interactive mode?
+// TODO: Limit output length?
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
