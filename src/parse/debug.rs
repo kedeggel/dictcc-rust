@@ -7,18 +7,19 @@ use dict::{Dict, QueryDirection};
 
 pub fn parse_test(path: &str) -> DictResult<()> {
     let dict = Dict::create(path)?;
-    let mut dq = dict.query();
 
     println!("Left Language: {}\tRight Language: {}",
              dict.get_left_language(), dict.get_right_language());
     loop {
+        let mut dq = dict.query("");
+
         println!("Direction (left, right or both):");
         let mut direction = String::new();
         ::std::io::stdin().read_line(&mut direction).unwrap();
         match direction.trim_right_matches(|c| c == '\n' || c == '\r') {
-            "right" => { dq.set_query_direction(QueryDirection::ToRight); }
-            "left" => { dq.set_query_direction(QueryDirection::ToLeft); }
-            "both" => { dq.set_query_direction(QueryDirection::Bidirectional); }
+            "right" => { dq.set_direction(QueryDirection::ToRight); }
+            "left" => { dq.set_direction(QueryDirection::ToLeft); }
+            "both" => { dq.set_direction(QueryDirection::Bidirectional); }
             _ => {}
         }
 
@@ -42,7 +43,8 @@ pub fn parse_test(path: &str) -> DictResult<()> {
         }
 
         eprintln!("query = {:?}", query);
-        let dqr = dq.query(&query);
+        let dq = dq.set_term(&query);
+        let dqr = dq.execute();
 
         println!("{}", dqr.into_grouped());
     }

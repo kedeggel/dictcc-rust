@@ -6,6 +6,7 @@ extern crate nom;
 use std::io;
 
 use failure::{Backtrace, Context};
+use dict::Language;
 
 pub type DictResult<T> = ::std::result::Result<T, DictError>;
 
@@ -22,9 +23,19 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
+    #[fail(display = "Unknown query type: {}", query_type)]
+    UnknownQueryType {
+        query_type: String,
+        backtrace: Backtrace,
+    },
     #[fail(display = "Invalid language code: {}", lang)]
     InvalidLanguageCode {
         lang: String,
+        backtrace: Backtrace,
+    },
+    #[fail(display = "Invalid source language: {}", source_language)]
+    InvalidSourceLanguage {
+        source_language: Language,
         backtrace: Backtrace,
     },
 
