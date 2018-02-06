@@ -73,16 +73,16 @@ impl<'a, T: Borrow<str>> WordNode<T> {
                 node.to_string()
             }
             ref node @ Angle(_) => {
-                node.to_string().red().to_string()
+                node.to_string().bright_red().to_string()
             }
             ref node @ Round(_) => {
-                node.to_string().green().to_string()
+                node.to_string().bright_green().to_string()
             }
             ref node @ Square(_) => {
-                node.to_string().blue().to_string()
+                node.to_string().bright_blue().to_string()
             }
             ref node @ Curly(_) => {
-                node.to_string().cyan().to_string()
+                node.to_string().bright_cyan().to_string()
             }
         }
     }
