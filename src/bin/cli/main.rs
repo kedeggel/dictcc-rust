@@ -10,15 +10,15 @@ use dictcc::dict::Dict;
 use dictcc::error::DictResult;
 use std::iter::once;
 
-// TODO: Caching of database parameter (App Dirs)
+// TODO: Caching of database parameter (App Dirs) @ Matze
 
-// TODO: Print something if result is empty
+// TODO: Print something if result is empty @ Matze
 
 // TODO: Interactive mode? (-i interactive) only query
 
 // TODO: Limit output length? less cross platform/rust pager
 
-// TODO: Disable color flag
+// TODO: Disable color flag @ Matze
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
