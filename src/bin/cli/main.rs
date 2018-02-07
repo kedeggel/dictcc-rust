@@ -9,6 +9,7 @@ extern crate failure;
 #[macro_use]
 extern crate serde_derive;
 extern crate colored;
+extern crate simplelog;
 
 use app_dirs::*;
 use dictcc::dict::{Dict, Language, QueryType};
@@ -42,6 +43,10 @@ struct Cli {
     /// Disable colored output.
     #[structopt(short = "c", long = "no-color")]
     no_color: bool,
+
+    /// Verbose mode (-v, -vv, -vvv, etc.)
+    #[structopt(short = "v", long = "verbose")]
+    verbose: u64,
 
     /// In which language the query is written. If not specified, the query is bidirectional.
     #[structopt(short = "l", long = "language")]
