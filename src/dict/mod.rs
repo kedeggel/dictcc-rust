@@ -89,7 +89,7 @@ impl Dict {
 
     pub fn query<'a, 'b>(&'a self, query_term: &'b str) -> DictQuery<'a, 'b> {
         DictQuery {
-            dict: &self,
+            dict: self,
             query_term,
             query_type: QueryType::Word,
             query_direction: QueryDirection::Bidirectional,
@@ -161,7 +161,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     /// Sets the query direction based on the given source language.
     /// Convenience function for `set_query_direction`
     pub fn source_language(&mut self, source_language: &Language) -> DictResult<&mut Self> {
-        let query_direction = self.dict.get_language_pair().infer_query_direction(&source_language)?;
+        let query_direction = self.dict.get_language_pair().infer_query_direction(source_language)?;
         self.set_direction(query_direction);
         Ok(self)
     }
@@ -562,7 +562,7 @@ impl FromStr for Gender {
 }
 
 
-/// Lists all available WordClasses
+/// Lists all available `WordClasses`
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Ord, PartialOrd)]
 pub enum WordClass {
     Adjective,
