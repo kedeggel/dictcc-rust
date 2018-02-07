@@ -231,6 +231,5 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
         println!("{}", query_result_grouped);
     }
 
-
     Ok(())
 }

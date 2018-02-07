@@ -32,7 +32,3 @@ cli = ["structopt", "structopt-derive", "app_dirs", "toml"]
 name = "dictcc"
 path = "src/bin/cli/main.rs"
 required-features = ["cli"]
-
-[[bin]]
-name = "dictcc-debug"
-path = "src/bin/debug.rs"
