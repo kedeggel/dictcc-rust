@@ -181,7 +181,7 @@ fn run_cli(cli: Cli) -> DictCliResult<()> {
 fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
     println!("Enter query language (if empty, the query is bidirectional):");
     let mut tmp_lang = String::new();
-    ::std::io::stdin().read_line(&mut tmp_lang).unwrap();
+    ::std::io::stdin().read_line(&mut tmp_lang)?;
     tmp_lang = tmp_lang.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
     cli.language = if tmp_lang == "" {
         None
@@ -191,7 +191,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
 
     println!("Enter query type (\"w(ord)\" [default], \"e(xact)\", \"r(egex)\"):");
     let mut tmp_type = String::new();
-    ::std::io::stdin().read_line(&mut tmp_type).unwrap();
+    ::std::io::stdin().read_line(&mut tmp_type)?;
     tmp_type = tmp_type.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
     cli.query_type = if tmp_type == "" {
          QueryType::Word
@@ -201,7 +201,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
 
     println!("Enter query:");
     let mut query_term = String::new();
-    ::std::io::stdin().read_line(&mut query_term).unwrap();
+    ::std::io::stdin().read_line(&mut query_term)?;
     query_term = query_term.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
     if query_term == "" {
         return Ok(false)
