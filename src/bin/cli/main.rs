@@ -25,8 +25,6 @@ pub mod error;
 const APP_INFO: AppInfo = AppInfo { name: "dictcc-rust", author: "DeggelmannAndLengler" };
 const CONFIG_NAME: &'static str = "config.toml";
 
-// TODO: Print something if result is empty @ Matze
-
 // TODO: Limit output length? less cross platform/rust pager
 
 #[derive(StructOpt, Debug, Clone)]
@@ -225,9 +223,14 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
 
     let query_result = query.execute()?;
 
-    let query_result_grouped = query_result.into_grouped();
+    if query_result.get_results().is_empty() {
+        println!("Sorry, no translations found!");
+    } else {
+        let query_result_grouped = query_result.into_grouped();
 
-    println!("{}", query_result_grouped);
+        println!("{}", query_result_grouped);
+    }
+
 
     Ok(())
 }
