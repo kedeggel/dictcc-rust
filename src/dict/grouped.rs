@@ -44,7 +44,7 @@ impl Display for DictQueryResultGrouped {
                 .collect()
         );
 
-        let mut format = FORMAT_CLEAN.clone();
+        let mut format = *FORMAT_CLEAN;
 
         format.separator(Intern, LineSeparator::new(' ', ' ', ' ', ' '));
         format.padding(0, 0);
@@ -102,14 +102,14 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
                         let left = &left_entry.source.indexed_word;
                         let right = &right_entry.source.indexed_word;
 
-                        left.cmp(&right)
+                        left.cmp(right)
                     };
 
                     let cmp_right = |left_entry: &DictEntry, right_entry: &DictEntry| {
                         let left = &left_entry.translation.indexed_word;
                         let right = &right_entry.translation.indexed_word;
 
-                        left.cmp(&right)
+                        left.cmp(right)
                     };
 
                     match query_direction {
@@ -156,7 +156,7 @@ impl Display for DictEntryWordCountGroup {
                 .collect()
         );
 
-        let mut format = FORMAT_CLEAN.clone();
+        let mut format = *FORMAT_CLEAN;
 
         format.separator(Intern, LineSeparator::new(' ', ' ', ' ', ' '));
         format.padding(0, 0);
@@ -203,7 +203,7 @@ impl Display for DictEntryWordClassGroup {
         let mut complete_table = Table::init(vec![row![header_string], row![entry_table_string]]);
 
 
-        let mut format = prettytable::format::consts::FORMAT_NO_BORDER.clone();
+        let mut format = *prettytable::format::consts::FORMAT_NO_BORDER;
 
         format.padding(0, 0);
 

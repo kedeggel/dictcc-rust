@@ -28,11 +28,11 @@ impl<'a, 'b> From<&'a WordNode<&'b str>> for WordNode<String> {
         use std::string::ToString;
 
         match *str_node {
-            Word(ref s) => Word(s.to_string()),
+            Word(s) => Word(s.to_string()),
             Angle(ref vec_s) => Angle(vec_s.iter().map(ToString::to_string).collect()),
-            Round(ref s) => Round(s.to_string()),
-            Square(ref s) => Square(s.to_string()),
-            Curly(ref s) => Curly(s.to_string()),
+            Round(s) => Round(s.to_string()),
+            Square(s) => Square(s.to_string()),
+            Curly(s) => Curly(s.to_string()),
         }
     }
 }
@@ -150,10 +150,10 @@ impl<'a> WordNodes<&'a str> {
         }
 
         nom_res.to_full_result()
-            .map(|vec_word_node| WordNodes::from(vec_word_node))
+            .map(WordNodes::from)
             .map_err(|err| {
                 DictError::WordASTParse { cause: err, word: word.to_string() }
-            }).into()
+            })
     }
 
     pub fn with_fallback_from(s: &'a str) -> Self {
@@ -171,7 +171,6 @@ impl<'a> WordNodes<&'a str> {
 }
 
 impl<T: Borrow<str>> WordNodes<T> {
-
     pub fn build_comments(&self) -> Vec<String> {
         use self::WordNode::*;
 
@@ -194,7 +193,7 @@ impl<T: Borrow<str>> WordNodes<T> {
                     _ => None,
                 }
             })
-            .flat_map(|foo| foo.iter().map(|s| s.borrow().to_string()))
+            .flat_map(|acronym_vec| acronym_vec.iter().map(|s| s.borrow().to_string()))
             .collect()
     }
 
@@ -214,9 +213,7 @@ impl<T: Borrow<str>> WordNodes<T> {
 
         self.nodes.iter().filter_map(|node| {
             match *node {
-                ref node @ Word(_) => {
-                    Some(node.to_string())
-                }
+                ref node @ Word(_) |
                 ref node @ Round(_) => {
                     Some(node.to_string())
                 }
@@ -254,9 +251,9 @@ impl<T: Borrow<str>> WordNodes<T> {
     pub fn count_words(&self) -> u8 {
         use self::WordNode::*;
 
-        self.nodes.iter().filter(|node| {
+        self.nodes.iter().filter(|&node| {
             match *node {
-                &Word(_) | &Round(_) => true,
+                Word(_) | Round(_) => true,
                 _ => false,
             }
         }).count() as u8
