@@ -70,7 +70,7 @@ fn run_query(cli: Cli) -> DictResult<()> {
 
     query.set_type(cli.query_type);
 
-    let query_result = query.execute();
+    let query_result = query.execute()?;
 
     let query_result_grouped = query_result.into_grouped();
 

@@ -2,6 +2,7 @@ extern crate csv;
 extern crate failure;
 extern crate htmlescape;
 extern crate nom;
+extern crate regex;
 
 use std::io;
 
@@ -76,6 +77,9 @@ pub enum DictError {
 
     #[fail(display = "Parse error with context: {:?}", _0)]
     Context(#[cause] Context<String>, Backtrace),
+
+    #[fail(display = "{}", _0)]
+    Regex(#[cause] regex::Error, Backtrace),
 }
 
 impl From<csv::Error> for DictError {
@@ -93,5 +97,11 @@ impl From<htmlescape::DecodeErr> for DictError {
 impl From<Context<String>> for DictError {
     fn from(context: Context<String>) -> Self {
         DictError::Context(context, Backtrace::new())
+    }
+}
+
+impl From<regex::Error> for DictError {
+    fn from(err: regex::Error) -> Self {
+        DictError::Regex(err, Backtrace::new())
     }
 }

@@ -44,7 +44,7 @@ pub fn parse_test(path: &str) -> DictResult<()> {
 
         eprintln!("query = {:?}", query);
         let dq = dq.set_term(&query);
-        let dqr = dq.execute();
+        let dqr = dq.execute()?;
 
         println!("{}", dqr.into_grouped());
     }

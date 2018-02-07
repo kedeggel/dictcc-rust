@@ -188,15 +188,14 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Execute the query.
-    pub fn execute(&self) -> DictQueryResult {
+    pub fn execute(&self) -> DictResult<DictQueryResult> {
         let regexp = match self.query_type {
-            // TODO: remove unwrap
-            QueryType::Word => RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", escape(self.query_term))).case_insensitive(true).build().unwrap(),
-            QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(self.query_term))).case_insensitive(true).build().unwrap(),
-            QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", self.query_term)).case_insensitive(true).build().unwrap(),
+            QueryType::Word => RegexBuilder::new(&format!(r"(^|\s|-){}($|\s|-)", escape(self.query_term))).case_insensitive(true).build()?,
+            QueryType::Exact => RegexBuilder::new(&format!(r"^{}$", escape(self.query_term))).case_insensitive(true).build()?,
+            QueryType::Regex => RegexBuilder::new(&format!(r"^{}$", self.query_term)).case_insensitive(true).build()?,
         };
 
-        DictQueryResult {
+        Ok(DictQueryResult {
             entries: self.dict.entries.iter().filter(|entry| {
                 match self.query_direction {
                     QueryDirection::ToRight => regexp.is_match(&entry.source.indexed_word),
@@ -206,7 +205,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
                 }
             }).cloned().collect(),
             query_direction: self.query_direction,
-        }
+        })
     }
 }
 
