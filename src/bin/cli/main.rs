@@ -24,11 +24,7 @@ pub mod error;
 const APP_INFO: AppInfo = AppInfo { name: "dictcc-rust", author: "DeggelmannAndLengler" };
 const CONFIG_NAME: &'static str = "config.toml";
 
-// TODO: Caching of database parameter (App Dirs) @ Matze
-
 // TODO: Print something if result is empty @ Matze
-
-// TODO: Interactive mode? (-i interactive) only query
 
 // TODO: Limit output length? less cross platform/rust pager
 
