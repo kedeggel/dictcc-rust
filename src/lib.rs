@@ -7,7 +7,6 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate nom;
-extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate regex;
