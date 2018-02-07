@@ -28,10 +28,10 @@ const CONFIG_NAME: &'static str = "config.toml";
 // TODO: Limit output length? less cross platform/rust pager
 
 #[derive(StructOpt, Debug, Clone)]
-#[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
+#[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]
 struct Cli {
-    /// Path to the dict.cc database file. If not specified, the last used path is selected instead.
-    /// If there was never a path specified, an error is shown.
+    /// Path to the dict.cc database file. If not specified, the last used path is used instead.
+    /// If there never was a path specified, an error is shown.
     #[structopt(short = "d", long = "database", parse(from_os_str))]
     database_path: Option<PathBuf>,
 
@@ -53,13 +53,14 @@ struct Cli {
     #[structopt(short = "t", long = "type", default_value = "Word")]
     query_type: QueryType,
 
-    /// First query term.
+    /// The query to be translated.
     #[structopt(required_unless = "interactive_mode")]
     query: Option<String>,
 }
 
 fn main() {
-    let cli = Cli::from_args();
+    let cli: Cli = Cli::from_args();
+
     println!("{:?}", cli);
 
     if let Err(err) = run_cli(cli) {
