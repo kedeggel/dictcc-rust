@@ -20,8 +20,6 @@ mod error;
 mod cli;
 mod config;
 
-// TODO: Limit output length? less cross platform/rust pager
-
 fn main() {
     let cli: Cli = Cli::from_args();
 

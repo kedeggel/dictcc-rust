@@ -1,4 +1,6 @@
 extern crate colored;
+#[cfg(target_os = "linux")]
+extern crate pager;
 
 use config::Config;
 use dictcc::{Dict, Language, QueryType};
@@ -7,6 +9,8 @@ use simplelog::{self, LevelFilter, TermLogger};
 use std::default::Default;
 use std::path::PathBuf;
 use std::str::FromStr;
+#[cfg(target_os = "linux")]
+use pager::Pager;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]
@@ -138,7 +142,8 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
         println!("Sorry, no translations found!");
     } else {
         let query_result_grouped = query_result.into_grouped();
-
+        #[cfg(target_os = "linux")]
+        Pager::with_pager("less -r").setup();
         println!("{}", query_result_grouped);
     }
 
