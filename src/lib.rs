@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 extern crate csv;
 #[macro_use]
 extern crate failure;
@@ -14,6 +16,7 @@ extern crate regex;
 extern crate prettytable;
 extern crate itertools;
 extern crate colored;
+
 
 pub mod parse;
 pub mod dict;
