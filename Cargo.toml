@@ -19,11 +19,14 @@ prettytable-rs = "0.6.7"
 itertools = "0.7.6"
 colored = "1.6.0"
 
+# CLI Depedencies
 structopt = {version = "0.1", optional = true }
 structopt-derive = {version = "0.1", optional = true }
+app_dirs = {version = "1.1.1", optional = true }
+toml = {version = "0.4.5", optional = true }
 
 [features]
-cli = ["structopt", "structopt-derive"]
+cli = ["structopt", "structopt-derive", "app_dirs", "toml"]
 
 [[bin]]
 name = "dictcc"
