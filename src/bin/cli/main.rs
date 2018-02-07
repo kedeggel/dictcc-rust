@@ -10,18 +10,14 @@ extern crate failure;
 extern crate serde_derive;
 
 use app_dirs::*;
-use dictcc::dict::Dict;
-use dictcc::dict::Language;
-use dictcc::dict::QueryType;
-use error::DictCliResult;
+use dictcc::dict::{Dict, Language, QueryType};
 use std::fs::{canonicalize, File};
 use std::io::BufReader;
 use std::io::prelude::*;
-use std::iter::once;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use structopt::StructOpt;
-use std::path::Path;
-use error::DictCliError;
+use error::{DictCliResult, DictCliError};
 
 pub mod error;
 
@@ -38,13 +34,17 @@ const CONFIG_NAME: &'static str = "config.toml";
 
 // TODO: Disable color flag @ Matze
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
 struct Cli {
     /// Path to the dict.cc database file. If not specified, the last used path is selected instead.
     /// If there was never a path specified, an error is shown.
     #[structopt(short = "d", long = "database", parse(from_os_str))]
     database_path: Option<PathBuf>,
+
+    /// Activates the interactive mode
+    #[structopt(short = "i", long = "interactive")]
+    interactive_mode: bool,
 
     /// In which language the query is written. If not specified, the query is bidirectional.
     #[structopt(short = "l", long = "language")]
@@ -57,17 +57,15 @@ struct Cli {
     query_type: QueryType,
 
     /// First query term.
-    query: String,
-
-    /// Rest of the query.
-    query_rest: Vec<String>,
+    #[structopt(required_unless = "interactive_mode")]
+    query: Option<String>,
 }
 
 fn main() {
     let cli = Cli::from_args();
     println!("{:?}", cli);
 
-    if let Err(err) = run_query(cli) {
+    if let Err(err) = run_cli(cli) {
         eprintln!("{}", err);
         std::process::exit(1);
     }
@@ -158,24 +156,66 @@ impl Config {
             }
         }
     }
-
 }
 
 
-fn run_query(cli: Cli) -> DictCliResult<()> {
+fn run_cli(cli: Cli) -> DictCliResult<()> {
     let config = Config::update_with_cli(&cli)?;
-
+    let mut cloned_cli = cli.clone();
     let dict = Dict::create(config.last_database_path)?;
 
-    let query_term = once(cli.query.as_str())
-        .chain(cli.query_rest.iter().map(String::as_str))
-        .collect::<Vec<_>>()
-        .join(" ");
+    if cloned_cli.query.is_some() {
+        run_query(&cloned_cli, &dict)?;
+    }
+    if cloned_cli.interactive_mode {
+        loop {
+            if !update_cli_interactive(&mut cloned_cli)? {
+                break;
+            }
+            run_query(&cloned_cli, &dict)?;
+        }
+    }
+    Ok(())
+}
 
-    let mut query = dict.query(&query_term);
+fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
+    println!("Enter query language (if empty, the query is bidirectional):");
+    let mut tmp_lang = String::new();
+    ::std::io::stdin().read_line(&mut tmp_lang)?;
+    tmp_lang = tmp_lang.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    cli.language = if tmp_lang == "" {
+        None
+    } else {
+        Some(Language::from_str(&tmp_lang)?)
+    };
 
-    if let Some(language) = cli.language {
-        query.source_language(&language)?;
+    println!("Enter query type (\"w(ord)\" [default], \"e(xact)\", \"r(egex)\"):");
+    let mut tmp_type = String::new();
+    ::std::io::stdin().read_line(&mut tmp_type)?;
+    tmp_type = tmp_type.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    cli.query_type = if tmp_type == "" {
+         QueryType::Word
+    } else {
+        QueryType::from_str(&tmp_type)?
+    };
+
+    println!("Enter query:");
+    let mut query_term = String::new();
+    ::std::io::stdin().read_line(&mut query_term)?;
+    query_term = query_term.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    if query_term == "" {
+        return Ok(false)
+    }
+    cli.query = Some(query_term);
+    Ok(true)
+}
+
+
+fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
+    let mut query = dict.query(cli.query.as_ref().unwrap());
+
+    if let Some(ref language) = cli.language {
+        query.source_language(language)?;
     }
 
     query.set_type(cli.query_type);
