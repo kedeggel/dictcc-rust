@@ -8,16 +8,17 @@ extern crate toml;
 extern crate failure;
 #[macro_use]
 extern crate serde_derive;
+extern crate colored;
 
 use app_dirs::*;
 use dictcc::dict::{Dict, Language, QueryType};
+use error::{DictCliError, DictCliResult};
 use std::fs::{canonicalize, File};
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use structopt::StructOpt;
-use error::{DictCliResult, DictCliError};
 
 pub mod error;
 
@@ -28,8 +29,6 @@ const CONFIG_NAME: &'static str = "config.toml";
 
 // TODO: Limit output length? less cross platform/rust pager
 
-// TODO: Disable color flag @ Matze
-
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Translator powered by the translation database of dict.cc")]
 struct Cli {
@@ -38,9 +37,13 @@ struct Cli {
     #[structopt(short = "d", long = "database", parse(from_os_str))]
     database_path: Option<PathBuf>,
 
-    /// Activates the interactive mode
+    /// Activates the interactive mode.
     #[structopt(short = "i", long = "interactive")]
     interactive_mode: bool,
+
+    /// Disable colored output.
+    #[structopt(short = "c", long = "no-color")]
+    no_color: bool,
 
     /// In which language the query is written. If not specified, the query is bidirectional.
     #[structopt(short = "l", long = "language")]
@@ -154,9 +157,13 @@ impl Config {
     }
 }
 
-
 fn run_cli(cli: Cli) -> DictCliResult<()> {
     let config = Config::update_with_cli(&cli)?;
+
+    if cli.no_color {
+        colored::control::set_override(false)
+    }
+
     let mut cloned_cli = cli.clone();
     let dict = Dict::create(config.last_database_path)?;
 
@@ -190,7 +197,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
     ::std::io::stdin().read_line(&mut tmp_type)?;
     tmp_type = tmp_type.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
     cli.query_type = if tmp_type == "" {
-         QueryType::Word
+        QueryType::Word
     } else {
         QueryType::from_str(&tmp_type)?
     };
@@ -200,7 +207,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
     ::std::io::stdin().read_line(&mut query_term)?;
     query_term = query_term.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
     if query_term == "" {
-        return Ok(false)
+        return Ok(false);
     }
     cli.query = Some(query_term);
     Ok(true)
