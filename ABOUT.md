@@ -21,3 +21,7 @@ So, we found our base for the following work. We opened an issues where we colle
 ## Next steps
 *TODO*   
 CLI
+
+## Problems we met
+- Creating more than a million dictionary entries takes time, plenty of time, so we had to be thrifty with cloning, copying, (etc.) around.
+- When using extern crates, remember that they are also just written by human beings, so they are not perfect. When we were looking for a pager for better display of our output, we discovered that [this pager](https://crates.io/crates/pager) (the only existing rust pager) doesn't work on Windows (what was/is our main developing systems). Therefore we had to use conditional compilation to tell the compiler only to use this dependency when we work on Linux.
