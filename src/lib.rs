@@ -1,7 +1,7 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 
-//! Rust API for use of dict.cc translation data
+//! Rust API for reading and querying the dict.cc offline translation database.
 
 extern crate csv;
 #[macro_use]

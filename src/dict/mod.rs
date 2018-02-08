@@ -136,6 +136,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Sets the query direction based on the given source language.
+    ///
     /// Convenience function for `set_query_direction`
     pub fn source_language(&mut self, source_language: &Language) -> DictResult<&mut Self> {
         let query_direction = self.dict.get_language_pair().infer_query_direction(source_language)?;
@@ -144,6 +145,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Every entry that contains the query-word is a hit (default!)
+    ///
     /// Convenience function for `set_query_type`
     pub fn word(&mut self) -> &mut Self {
         self.set_type(QueryType::Word);
@@ -151,6 +153,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Search for exact matches
+    ///
     /// Convenience function for `set_query_type`
     pub fn exact(&mut self) -> &mut Self {
         self.set_type(QueryType::Exact);
@@ -158,6 +161,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Search for regex, so the user can specify by himself what he wants to match
+    ///
     /// Convenience function for `set_query_type`
     pub fn regex(&mut self) -> &mut Self {
         self.set_type(QueryType::Regex);
