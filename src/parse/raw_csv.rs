@@ -7,8 +7,8 @@ use error::{DictResult, DictError};
 
 #[derive(Debug,Deserialize)]
 pub struct RawDictEntry {
-    pub source: String,
-    pub translation: String,
+    pub left_word: String,
+    pub right_word: String,
     pub word_classes: String,
 }
 

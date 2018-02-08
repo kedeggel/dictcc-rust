@@ -12,9 +12,26 @@ htmlescape = "0.3.1"
 serde = "1"
 serde_derive = "1"
 nom = "3.2.1"
-log = "0.4.0-rc.1"
-env_logger = "0.5.0-rc.1"
+log = "0.4.1"
 regex = "0.2"
 prettytable-rs = "0.6.7"
 itertools = "0.7.6"
 colored = "1.6.0"
+
+# CLI Depedencies
+structopt = {version = "0.1", optional = true }
+structopt-derive = {version = "0.1", optional = true }
+app_dirs = {version = "1.1.1", optional = true }
+toml = {version = "0.4.5", optional = true }
+simplelog = {version = "0.5.0", optional = true }
+
+[features]
+cli = ["structopt", "structopt-derive", "app_dirs", "toml", "simplelog"]
+
+[[bin]]
+name = "dictcc"
+path = "src/bin/cli/main.rs"
+required-features = ["cli"]
+
+[profile.release]
+lto = true

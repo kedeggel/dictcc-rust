@@ -1,14 +1,19 @@
+//! Error handling.
+
 extern crate csv;
 extern crate failure;
 extern crate htmlescape;
 extern crate nom;
+extern crate regex;
 
-use std::io;
+use dict::Language;
+use failure::Backtrace;
 
-use failure::{Backtrace, Context};
-
+/// Type alias for Result with preconfigured error type `DictError`.
 pub type DictResult<T> = ::std::result::Result<T, DictError>;
 
+/// All errors that can be returned by this crate.
+#[allow(missing_docs)]
 #[derive(Debug, Fail)]
 pub enum DictError {
     #[fail(display = "Unknown gender name: {}", name)]
@@ -22,9 +27,19 @@ pub enum DictError {
         word_class: String,
         backtrace: Backtrace,
     },
+    #[fail(display = "Unknown query type: {}", query_type)]
+    UnknownQueryType {
+        query_type: String,
+        backtrace: Backtrace,
+    },
     #[fail(display = "Invalid language code: {}", lang)]
     InvalidLanguageCode {
         lang: String,
+        backtrace: Backtrace,
+    },
+    #[fail(display = "Invalid source language: {}", source_language)]
+    InvalidSourceLanguage {
+        source_language: Language,
         backtrace: Backtrace,
     },
 
@@ -32,9 +47,6 @@ pub enum DictError {
     LanguageCodeNotFound {
         backtrace: Backtrace,
     },
-
-    #[fail(display = "{}", _0)]
-    Io(#[cause] io::Error),
 
     #[fail(display = "Could not open dictionary file at {:?}: {}", path, cause)]
     FileOpen {
@@ -63,8 +75,8 @@ pub enum DictError {
         remaining_input: String,
     },
 
-    #[fail(display = "Parse error with context: {:?}", _0)]
-    Context(#[cause] Context<String>, Backtrace),
+    #[fail(display = "{}", _0)]
+    Regex(#[cause] regex::Error, Backtrace),
 }
 
 impl From<csv::Error> for DictError {
@@ -79,8 +91,8 @@ impl From<htmlescape::DecodeErr> for DictError {
     }
 }
 
-impl From<Context<String>> for DictError {
-    fn from(context: Context<String>) -> Self {
-        DictError::Context(context, Backtrace::new())
+impl From<regex::Error> for DictError {
+    fn from(err: regex::Error) -> Self {
+        DictError::Regex(err, Backtrace::new())
     }
 }

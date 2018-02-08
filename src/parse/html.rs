@@ -4,16 +4,16 @@ use parse::raw_csv::RawDictEntry;
 
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {
-    pub source: String,
-    pub translation: String,
+    pub left_word: String,
+    pub right_word: String,
     pub word_classes: String,
 }
 
 impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
     fn from(raw: &RawDictEntry) -> Self {
         HtmlDecodedDictEntry {
-            source: html_decode_with_fallback(&raw.source),
-            translation: html_decode_with_fallback(&raw.translation),
+            left_word: html_decode_with_fallback(&raw.left_word),
+            right_word: html_decode_with_fallback(&raw.right_word),
             word_classes: raw.word_classes.clone(),
         }
     }
