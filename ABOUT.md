@@ -15,12 +15,21 @@ Then we dug deeper into dict.cc's [Terms of Use](https://www1.dict.cc/translatio
 ## Working method
 So, we found our base for the following work. We opened an issues where we collected our ideas for the use cases, the API and how the data should be structured. We distributed tasks and used different feature branches to make look our two-man project more professional.
 
+## Parsing the database
+*TODO* @Mathias (example entry, crates used)
+
 ## API
-*TODO*
+*TODO* @Mathias (Documentation, Example use case)
+
+## CLI
+*TODO* @Mathias (features, crates used)
 
 ## Next steps
 *TODO*   
-CLI
+
+### Data Structures/Database
+*TODO* @Mathias (crates/DBs evaluated)
+
 
 ## Problems we met
 - Creating more than a million dictionary entries takes time, plenty of time, so we had to be thrifty with cloning, copying, (etc.) around.
