@@ -271,24 +271,13 @@ impl<T: Borrow<str>> WordNodes<T> {
 
 /// Word Abstract-Syntax-Tree
 #[derive(Debug, PartialEq, Eq)]
-pub struct WordNodesDictEntry<T: Borrow<str>> {
+pub(crate) struct WordNodesDictEntry<T: Borrow<str>> {
     /// Source word, parsed into WordNodes
     pub source: WordNodes<T>,
     /// Target word, parsed into WordNodes
     pub translation: WordNodes<T>,
     /// Simple str representation of word classes
     pub word_classes: T,
-}
-
-impl<'a, T: Borrow<str>> WordNodesDictEntry<T> {
-    /// Try to convert from HtmlDecodedDictEntry into WordNodesDictEntry
-    pub fn try_from(entry: &'a HtmlDecodedDictEntry) -> DictResult<WordNodesDictEntry<&'a str>> {
-        Ok(WordNodesDictEntry {
-            source: WordNodes::try_from(&entry.source)?,
-            translation: WordNodes::try_from(&entry.translation)?,
-            word_classes: &entry.word_classes,
-        })
-    }
 }
 
 impl<'a> From<&'a HtmlDecodedDictEntry> for WordNodesDictEntry<&'a str> {

@@ -244,7 +244,7 @@ pub struct DictEntry {
 
 impl DictEntry {
     /// Try to convert from WordNodesDictEntry into DictEntry
-    pub fn try_from(word_nodes_dict_entry: WordNodesDictEntry<String>) -> DictResult<Self> {
+    pub(crate) fn try_from(word_nodes_dict_entry: WordNodesDictEntry<String>) -> DictResult<Self> {
         let mut classes = Vec::new();
         for class in word_nodes_dict_entry.word_classes.split_whitespace() {
             classes.push(WordClass::try_from(class)?);
@@ -277,10 +277,10 @@ pub struct DictWord {
     indexed_word: String,
 
     /// The AST (abstract syntax tree) of the complete word.
-    word_nodes: WordNodes<String>,
+    pub word_nodes: WordNodes<String>,
 
     /// The number of space separated words in this `DictWord`
-    word_count: u8,
+    pub word_count: u8,
 }
 
 impl Display for DictWord {
@@ -498,7 +498,7 @@ impl Display for Language {
             ES => write!(f, "Spanish"),
             SV => write!(f, "Swedish"),
             TR => write!(f, "Turkish"),
-            Other { ref language_code } => write!(f, "{}", language_code),
+            Other { ref language_code } => write!(f, "Other Language: {}", language_code),
         }
     }
 }
@@ -507,9 +507,9 @@ impl Display for Language {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictLanguagePair {
     /// The left language in the database.
-    left_language: Language,
+    pub left_language: Language,
     /// The right language in the database.
-    right_language: Language,
+    pub right_language: Language,
 }
 
 impl DictLanguagePair {
