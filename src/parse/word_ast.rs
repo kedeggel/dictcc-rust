@@ -343,11 +343,12 @@ named!(entry_fragment<&str,WordNode<&str>>, alt!(
 
 named!(entry<&str, Vec<WordNode<&str>> >, many1!( ws!( entry_fragment ) ));
 
-use nom::IResult::*;
-use super::*;
 
 #[cfg(test)]
 mod tests {
+    use nom::IResult::*;
+    use super::*;
+
     #[test]
     fn test_entry_parser() {
         let input = "(optional) word {f} [comment] <foo, bar, baz>";
