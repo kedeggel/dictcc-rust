@@ -20,7 +20,7 @@ main() {
     # TODO Update this to build the artifacts that matter to you (done?)
     cross rustc --features cli --bin dictcc --target $TARGET --release -- -C lto
 
-    # TODO Update this to package the right artifacts (ending?)
+    # TODO Update this to package the right artifacts
     cp target/$TARGET/release/dictcc $stage/
 
     cd $stage
