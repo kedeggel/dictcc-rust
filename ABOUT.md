@@ -137,7 +137,9 @@ DictEntry {
 ```
 
 ## API
-*TODO* @Mathias (Documentation, Example use case)
+For an overview of our library API we recommend a look at our rust documentation [TODO: Link]().  We used the crate level attribute `#![warn(missing_docs)]` and documented all public API endpoints.
+
+For an simple usage example, we provided some examples in the [examples directory](./examples). These are executable via the cargo flag `--example`.
 
 ## CLI
 *TODO* @Mathias (features, crates used)
