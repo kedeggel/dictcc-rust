@@ -2,6 +2,7 @@ extern crate failure;
 extern crate app_dirs;
 extern crate dictcc;
 extern crate toml;
+extern crate simplelog;
 
 use dictcc::error::DictError;
 use std::io;
@@ -15,6 +16,9 @@ pub enum DictCliError {
 
     #[fail(display = "{}", _0)]
     DictError(#[cause] DictError),
+
+    #[fail(display = "{}", _0)]
+    TermLogError(#[cause] simplelog::TermLogError),
 
     #[fail(display = "{}", _0)]
     AppDirsError(#[cause] app_dirs::AppDirsError),
@@ -56,5 +60,11 @@ impl From<toml::de::Error> for DictCliError {
 impl From<toml::ser::Error> for DictCliError {
     fn from(err: toml::ser::Error) -> Self {
         DictCliError::TomlSe(err)
+    }
+}
+
+impl From<simplelog::TermLogError> for DictCliError {
+    fn from(err: simplelog::TermLogError) -> Self {
+        DictCliError::TermLogError(err)
     }
 }
