@@ -2,7 +2,6 @@ extern crate colored;
 
 use config::Config;
 use dictcc::dict::{Dict, Language, QueryType};
-use error::DictCliError;
 use error::DictCliResult;
 use simplelog::{self, LevelFilter, TermLogger};
 use std::default::Default;
@@ -92,10 +91,14 @@ fn init_log(cli: &Cli) -> DictCliResult<()> {
 }
 
 fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
+    fn read_stdin_line() -> DictCliResult<String> {
+        let mut line = String::new();
+        ::std::io::stdin().read_line(&mut line)?;
+        Ok(line.trim_right_matches(|c| c == '\n' || c == '\r').to_string())
+    }
+
     println!("Enter query language (if empty, the query is bidirectional):");
-    let mut tmp_lang = String::new();
-    ::std::io::stdin().read_line(&mut tmp_lang)?;
-    tmp_lang = tmp_lang.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    let tmp_lang = read_stdin_line()?;
     cli.language = if tmp_lang == "" {
         None
     } else {
@@ -103,9 +106,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
     };
 
     println!("Enter query type (\"w(ord)\" [default], \"e(xact)\", \"r(egex)\"):");
-    let mut tmp_type = String::new();
-    ::std::io::stdin().read_line(&mut tmp_type)?;
-    tmp_type = tmp_type.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    let tmp_type = read_stdin_line()?;
     cli.query_type = if tmp_type == "" {
         QueryType::Word
     } else {
@@ -113,9 +114,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
     };
 
     println!("Enter query:");
-    let mut query_term = String::new();
-    ::std::io::stdin().read_line(&mut query_term)?;
-    query_term = query_term.trim_right_matches(|c| c == '\n' || c == '\r').to_string();
+    let query_term = read_stdin_line()?;
     if query_term == "" {
         return Ok(false);
     }
