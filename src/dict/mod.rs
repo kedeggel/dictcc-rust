@@ -231,6 +231,7 @@ pub enum QueryDirection {
     Bidirectional,
 }
 
+// TODO: rename source -> left_word; translation -> right_word
 /// Structure that holds the word pair and it's class
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
