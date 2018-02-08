@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use toml;
 
 const APP_INFO: AppInfo = AppInfo { name: "dictcc-rust", author: "DeggelmannAndLengler" };
-const CONFIG_NAME: &'static str = "config.toml";
+const CONFIG_NAME: &str = "config.toml";
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
@@ -71,7 +71,7 @@ impl Config {
         Ok(())
     }
 
-    pub fn update_with_cli<'a>(cli: &Cli) -> DictCliResult<Config> {
+    pub fn update_with_cli(cli: &Cli) -> DictCliResult<Config> {
         let opt_config = Config::read()?;
 
         if let Some(mut config) = opt_config {
@@ -86,17 +86,15 @@ impl Config {
                 // Read Config
                 Ok(config)
             }
+        } else if let Some(ref database_path) = cli.database_path {
+            // Create Config
+            let config = Config::new(database_path)?;
+
+            config.write()?;
+
+            Ok(config)
         } else {
-            if let Some(ref database_path) = cli.database_path {
-                // Create Config
-                let config = Config::new(database_path)?;
-
-                config.write()?;
-
-                Ok(config)
-            } else {
-                Err(DictCliError::NoDatabasePath)
-            }
+            Err(DictCliError::NoDatabasePath)
         }
     }
 }
