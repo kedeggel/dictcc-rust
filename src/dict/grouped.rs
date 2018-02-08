@@ -11,23 +11,23 @@
 //! ```ignore
 //! Verbs
 //! --------------------
-//! Verb | verb | Verb
+//!  Verb | verb | Verb
 //!
 //! Nouns
 //! --------------------------
-//! DE         | EN   | Noun
-//! foo        | foo  | Noun
-//! Substantiv | noun | Noun
+//!  DE         | EN   | Noun
+//!  foo        | foo  | Noun
+//!  Substantiv | noun | Noun
 //!
 //! Others
 //! -------------------
-//! a | c | Adjective
-//! B | B | Adjective
-//! c | a | Adjective
+//!  a | c | Adjective
+//!  B | B | Adjective
+//!  c | a | Adjective
 //!
 //! 2 Words: Verbs
 //! ----------------------------
-//! foo Verb | foo verb | Verb
+//!  foo Verb | foo verb | Verb
 //! ```
 
 use super::*;
