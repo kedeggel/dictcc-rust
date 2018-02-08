@@ -15,7 +15,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
 
-mod grouped;
+pub mod grouped;
 
 /// Result of a translation query
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -26,7 +26,7 @@ pub struct DictQueryResult {
 
 impl DictQueryResult {
     /// Returns a slice of all entries found in the query.
-    pub fn get_results(&self) -> &[DictEntry] {
+    pub fn entries(&self) -> &[DictEntry] {
         &self.entries
     }
 

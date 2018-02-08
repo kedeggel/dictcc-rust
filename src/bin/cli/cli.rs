@@ -134,7 +134,7 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
 
     let query_result = query.execute()?;
 
-    if query_result.get_results().is_empty() {
+    if query_result.entries().is_empty() {
         println!("Sorry, no translations found!");
     } else {
         let query_result_grouped = query_result.into_grouped();
