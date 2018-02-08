@@ -179,10 +179,10 @@ impl<'a, 'b> DictQuery<'a, 'b> {
         Ok(DictQueryResult {
             entries: self.dict.entries.iter().filter(|entry| {
                 match self.query_direction {
-                    QueryDirection::ToRight => regexp.is_match(&entry.source.indexed_word),
-                    QueryDirection::ToLeft => regexp.is_match(&entry.translation.indexed_word),
-                    QueryDirection::Bidirectional => regexp.is_match(&entry.source.indexed_word)
-                        || regexp.is_match(&entry.translation.indexed_word),
+                    QueryDirection::ToRight => regexp.is_match(&entry.left_word.indexed_word),
+                    QueryDirection::ToLeft => regexp.is_match(&entry.right_word.indexed_word),
+                    QueryDirection::Bidirectional => regexp.is_match(&entry.left_word.indexed_word)
+                        || regexp.is_match(&entry.right_word.indexed_word),
                 }
             }).cloned().collect(),
             query_direction: self.query_direction,
@@ -231,15 +231,14 @@ pub enum QueryDirection {
     Bidirectional,
 }
 
-// TODO: rename source -> left_word; translation -> right_word
 /// Structure that holds the word pair and it's class
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictEntry {
-    /// Source word
-    pub source: DictWord,
-    /// Target word
-    pub translation: DictWord,
-    /// List of word classes (`noun`, `verb`, `adj`, etc.)
+    /// The word on the left side.
+    pub left_word: DictWord,
+    /// The word on the right side.
+    pub right_word: DictWord,
+    /// List of word classes (`noun`, `verb`, `adj`, etc.).
     pub word_classes: Vec<WordClass>,
 }
 
@@ -251,8 +250,8 @@ impl DictEntry {
             classes.push(WordClass::try_from(class)?);
         }
         Ok(DictEntry {
-            source: DictWord::try_from(word_nodes_dict_entry.source)?,
-            translation: DictWord::try_from(word_nodes_dict_entry.translation)?,
+            left_word: DictWord::try_from(word_nodes_dict_entry.left_word_nodes)?,
+            right_word: DictWord::try_from(word_nodes_dict_entry.right_word_nodes)?,
             word_classes: classes,
         })
     }
@@ -260,8 +259,8 @@ impl DictEntry {
     fn get_max_word_count(&self) -> u8 {
         use std::cmp::max;
 
-        let source_word_count = self.source.word_count;
-        let translation_word_count = self.translation.word_count;
+        let source_word_count = self.left_word.word_count;
+        let translation_word_count = self.right_word.word_count;
 
         max(source_word_count, translation_word_count)
     }

@@ -273,9 +273,9 @@ impl<T: Borrow<str>> WordNodes<T> {
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct WordNodesDictEntry<T: Borrow<str>> {
     /// Source word, parsed into WordNodes
-    pub source: WordNodes<T>,
+    pub left_word_nodes: WordNodes<T>,
     /// Target word, parsed into WordNodes
-    pub translation: WordNodes<T>,
+    pub right_word_nodes: WordNodes<T>,
     /// Simple str representation of word classes
     pub word_classes: T,
 }
@@ -285,8 +285,8 @@ impl<'a> From<&'a HtmlDecodedDictEntry> for WordNodesDictEntry<&'a str> {
     /// If word can't be parsed, a fallback representation of the word is used.
     fn from(entry: &'a HtmlDecodedDictEntry) -> WordNodesDictEntry<&'a str> {
         WordNodesDictEntry {
-            source: WordNodes::with_fallback_from(&entry.source),
-            translation: WordNodes::with_fallback_from(&entry.translation),
+            left_word_nodes: WordNodes::with_fallback_from(&entry.left_word),
+            right_word_nodes: WordNodes::with_fallback_from(&entry.right_word),
             word_classes: &entry.word_classes,
         }
     }
@@ -297,8 +297,8 @@ impl<'a> From<&'a HtmlDecodedDictEntry> for WordNodesDictEntry<String> {
     /// If word can't be parsed, a fallback representation of the word is used.
     fn from(entry: &'a HtmlDecodedDictEntry) -> WordNodesDictEntry<String> {
         WordNodesDictEntry {
-            source: WordNodes::from(&WordNodes::with_fallback_from(&entry.source)),
-            translation: WordNodes::from(&WordNodes::with_fallback_from(&entry.translation)),
+            left_word_nodes: WordNodes::from(&WordNodes::with_fallback_from(&entry.left_word)),
+            right_word_nodes: WordNodes::from(&WordNodes::with_fallback_from(&entry.right_word)),
             word_classes: entry.word_classes.to_string(),
         }
     }

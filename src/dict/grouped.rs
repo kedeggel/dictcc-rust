@@ -114,11 +114,11 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
 
         let get_word_count: fn(&DictEntry) -> u8 = match query_direction {
             QueryDirection::ToRight => |entry: &DictEntry| {
-                entry.source.word_count
+                entry.left_word.word_count
             },
             QueryDirection::Bidirectional => DictEntry::get_max_word_count,
             QueryDirection::ToLeft => |entry: &DictEntry| {
-                entry.translation.word_count
+                entry.right_word.word_count
             },
         };
 
@@ -142,15 +142,15 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
                     let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
 
                     let cmp_left = |left_entry: &DictEntry, right_entry: &DictEntry| {
-                        let left = &left_entry.source.indexed_word;
-                        let right = &right_entry.source.indexed_word;
+                        let left = &left_entry.left_word.indexed_word;
+                        let right = &right_entry.left_word.indexed_word;
 
                         left.cmp(right)
                     };
 
                     let cmp_right = |left_entry: &DictEntry, right_entry: &DictEntry| {
-                        let left = &left_entry.translation.indexed_word;
-                        let right = &right_entry.translation.indexed_word;
+                        let left = &left_entry.right_word.indexed_word;
+                        let right = &right_entry.right_word.indexed_word;
 
                         left.cmp(right)
                     };
@@ -260,8 +260,8 @@ impl Display for DictEntryWordClassGroup {
 
         // TODO: word classes filter (redundant classes)
         let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
-            let left = &entry.source.to_colored_string();
-            let right = &entry.translation.to_colored_string();
+            let left = &entry.left_word.to_colored_string();
+            let right = &entry.right_word.to_colored_string();
 
             let word_classes = &entry.word_classes.iter().map(|word_class| format!("{:?}", word_class)).collect::<Vec<_>>().join(", ");
 
