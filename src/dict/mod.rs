@@ -59,9 +59,13 @@ impl Dict {
 
         for record in records {
             let raw_entry: RawDictEntry = record?;
+            trace!("raw_entry = {:#?}", raw_entry);
             let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
+            trace!("html_decoded_entry = {:#?}", html_decoded_entry);
             let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
+            trace!("word_ast = {:#?}", word_ast);
             if let Ok(entry) = DictEntry::try_from(word_ast) {
+                trace!("entry = {:#?}", entry);
                 entries.push(entry);
             };
         }
