@@ -8,7 +8,7 @@
 //!
 //! # Example Output
 //!
-//! ```
+//! ```ignore
 //! Verbs
 //! --------------------
 //! Verb | verb | Verb

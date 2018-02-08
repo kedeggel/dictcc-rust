@@ -1,7 +1,7 @@
 extern crate colored;
 
 use config::Config;
-use dictcc::dict::{Dict, Language, QueryType};
+use dictcc::{Dict, Language, QueryType};
 use error::DictCliResult;
 use simplelog::{self, LevelFilter, TermLogger};
 use std::default::Default;

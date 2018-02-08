@@ -1,5 +1,3 @@
-//! Main Module for interaction with a dictionary
-
 extern crate csv;
 
 use dict::grouped::DictQueryResultGrouped;

@@ -21,6 +21,9 @@ extern crate itertools;
 extern crate colored;
 
 
-pub mod parse;
-pub mod dict;
+mod parse;
+mod dict;
 pub mod error;
+
+pub use dict::*;
+pub use parse::word_ast;
