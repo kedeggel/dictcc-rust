@@ -1,7 +1,11 @@
-use colored;
+extern crate colored;
+
 use config::Config;
 use dictcc::dict::{Dict, Language, QueryType};
+use error::DictCliError;
 use error::DictCliResult;
+use simplelog::{self, LevelFilter, TermLogger};
+use std::default::Default;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -42,26 +46,48 @@ pub struct Cli {
 
 
 pub fn run_cli(cli: Cli) -> DictCliResult<()> {
+    init_log(&cli)?;
+
+    debug!("cli = {:?}", cli);
+
     let config = Config::update_with_cli(&cli)?;
+
+    debug!("config = {:?}", config);
 
     if cli.no_color {
         colored::control::set_override(false)
     }
 
-    let mut cloned_cli = cli.clone();
+    info!("Using database path: {}", config.get_database_path().display());
     let dict = Dict::create(config.get_database_path())?;
 
-    if cloned_cli.query.is_some() {
-        run_query(&cloned_cli, &dict)?;
+    let mut cli = cli;
+
+    if cli.query.is_some() {
+        run_query(&cli, &dict)?;
     }
-    if cloned_cli.interactive_mode {
+    if cli.interactive_mode {
         loop {
-            if !update_cli_interactive(&mut cloned_cli)? {
+            if !update_cli_interactive(&mut cli)? {
                 break;
             }
-            run_query(&cloned_cli, &dict)?;
+            run_query(&cli, &dict)?;
         }
     }
+    Ok(())
+}
+
+fn init_log(cli: &Cli) -> DictCliResult<()> {
+    let filter = match cli.verbose {
+        0 => LevelFilter::Error,
+        1 => LevelFilter::Warn,
+        2 => LevelFilter::Info,
+        3 => LevelFilter::Debug,
+        _ => LevelFilter::Trace,
+    };
+
+    TermLogger::init(filter, simplelog::Config::default())?;
+
     Ok(())
 }
 

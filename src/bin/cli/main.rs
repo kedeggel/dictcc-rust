@@ -10,6 +10,8 @@ extern crate failure;
 extern crate serde_derive;
 extern crate colored;
 extern crate simplelog;
+#[macro_use]
+extern crate log;
 
 use cli::{Cli, run_cli};
 use structopt::StructOpt;
@@ -23,10 +25,8 @@ mod config;
 fn main() {
     let cli: Cli = Cli::from_args();
 
-    println!("{:?}", cli);
-
     if let Err(err) = run_cli(cli) {
-        eprintln!("{}", err);
+        error!("{}", err);
         std::process::exit(1);
     }
 }
