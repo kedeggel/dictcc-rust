@@ -1,19 +1,19 @@
+//! Main Module for interaction with a dictionary
+
 extern crate csv;
 
-use std::str::FromStr;
-use std::fmt::{self, Display, Formatter};
-use std::path::Path;
-use std::io::{BufRead, BufReader};
-use std::fs::File;
-
+use dict::grouped::DictQueryResultGrouped;
 use error::{DictError, DictResult};
 use failure::Backtrace;
-use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::html::HtmlDecodedDictEntry;
-use parse::word_ast::{WordNodesDictEntry, WordNodes};
-use regex::{escape, RegexBuilder, Regex, Captures};
-
-use dict::grouped::DictQueryResultGrouped;
+use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
+use parse::word_ast::{WordNodes, WordNodesDictEntry};
+use regex::{Captures, escape, Regex, RegexBuilder};
+use std::fmt::{self, Display, Formatter};
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+use std::str::FromStr;
 
 mod grouped;
 
@@ -25,10 +25,12 @@ pub struct DictQueryResult {
 }
 
 impl DictQueryResult {
+    /// Returns a slice of all entries found in the query.
     pub fn get_results(&self) -> &[DictEntry] {
         &self.entries
     }
 
+    /// Converts a `DictQueryResult` into a grouped representation used for structured display of the found entries.
     pub fn into_grouped(self) -> DictQueryResultGrouped {
         DictQueryResultGrouped::from(self)
     }
@@ -45,9 +47,12 @@ pub struct Dict {
 }
 
 impl Dict {
+    /// Create a `Dict` from a database at `path`.
+    ///
+    /// Reads the csv, decodes HTML-encoded characters and parses the dict.cc bracket syntax into a AST.
     pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
         let mut reader = get_csv_reader_from_path(&path)?;
-        let languages = get_language_pair_from_path(&path)?;
+        let languages = DictLanguagePair::from_path(&path)?;
         let records = reader
             .deserialize()
             .filter(incomplete_records_filter);
@@ -68,6 +73,7 @@ impl Dict {
         })
     }
 
+    /// Returns a slice of all entries in the `Dict`.
     pub fn get_entries(&self) -> &[DictEntry] {
         &self.entries
     }
@@ -87,6 +93,7 @@ impl Dict {
         &self.languages
     }
 
+    /// Returns a `DictQuery` builder.
     pub fn query<'a, 'b>(&'a self, query_term: &'b str) -> DictQuery<'a, 'b> {
         DictQuery {
             dict: self,
@@ -97,37 +104,9 @@ impl Dict {
     }
 }
 
-fn get_language_pair_from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLanguagePair> {
-    let file = File::open(&path).map_err(|err| DictError::FileOpen {
-        path: format!("{}", path.as_ref().display()),
-        cause: csv::Error::from(err),
-    })?;
 
-    let mut header = String::new();
-    let _ = BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
-        path: format!("{}", path.as_ref().display()),
-        cause: csv::Error::from(err),
-    })?;
-
-    // Since the regex cannot be changed, unwrap is ok here
-    let re = Regex::new("([A-Z]{2})-([A-Z]{2})").unwrap();
-    let captures = |s| re.captures(s);
-    let groups = match header.lines().next().and_then(captures) {
-        Some(mat) => mat,
-        None => return Err(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })
-    };
-
-    fn get_lang(idx: usize, captures: &Captures) -> DictResult<Language> {
-        Language::from_str(captures.get(idx).
-            ok_or(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })?.as_str())
-    }
-
-    Ok(DictLanguagePair {
-        left_language: get_lang(1, &groups)?,
-        right_language: get_lang(2, &groups)?,
-    })
-}
-
+/// Builder for a `DictQueryResult`.
+#[derive(Debug)]
 pub struct DictQuery<'a, 'b> {
     dict: &'a Dict,
     query_term: &'b str,
@@ -209,10 +188,14 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 }
 
+/// Different types of queries. Used by `DictQuery`.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum QueryType {
+    /// Search for exact matches
     Exact,
+    /// Every entry that contains the query-word is a hit
     Regex,
+    /// Search for regex, so the user can specify by himself what he wants to match
     Word,
 }
 
@@ -234,10 +217,15 @@ impl FromStr for QueryType {
     }
 }
 
+/// In which direction a query is executed. Used by `DictQuery`.
+/// Can be inferred by `DictLanguagePair::infer_query_direction`.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum QueryDirection {
+    /// Search in the left language, to get results in the right language.
     ToRight,
+    /// Search in the right language, to get results in the left language.
     ToLeft,
+    /// Search in both languages.
     Bidirectional,
 }
 
@@ -429,7 +417,10 @@ pub enum Language {
     /// Turkish
     TR,
     /// Other language that are not listed explicitly
-    Other { language_code: String },
+    Other {
+        /// The unknown language code.
+        language_code: String
+    },
 }
 
 impl FromStr for Language {
@@ -513,11 +504,19 @@ impl Display for Language {
 /// A pair of two languages. Identifies the languages of a single translation database file.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictLanguagePair {
+    /// The left language in the database.
     left_language: Language,
+    /// The right language in the database.
     right_language: Language,
 }
 
 impl DictLanguagePair {
+    /// Infers the `QueryDirection` based on a given language.
+    ///
+    /// # Errors
+    ///
+    /// Returns `DictError::InvalidSourceLanguage`
+    /// if `source_language` is not one of the two languages in `DictLanguagePair`.
     pub fn infer_query_direction(&self, source_language: &Language) -> DictResult<QueryDirection> {
         if *source_language == self.left_language {
             Ok(QueryDirection::ToRight)
@@ -530,10 +529,43 @@ impl DictLanguagePair {
             })
         }
     }
+
+    fn from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLanguagePair> {
+        let file = File::open(&path).map_err(|err| DictError::FileOpen {
+            path: format!("{}", path.as_ref().display()),
+            cause: csv::Error::from(err),
+        })?;
+
+        let mut header = String::new();
+        let _ = BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
+            path: format!("{}", path.as_ref().display()),
+            cause: csv::Error::from(err),
+        })?;
+
+        // Since the regex cannot be changed, unwrap is ok here
+        let re = Regex::new("([A-Z]{2})-([A-Z]{2})").unwrap();
+        let captures = |s| re.captures(s);
+        let groups = match header.lines().next().and_then(captures) {
+            Some(mat) => mat,
+            None => return Err(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })
+        };
+
+        fn get_lang(idx: usize, captures: &Captures) -> DictResult<Language> {
+            Language::from_str(captures.get(idx).
+                ok_or(DictError::LanguageCodeNotFound { backtrace: Backtrace::new() })?.as_str())
+        }
+
+        Ok(DictLanguagePair {
+            left_language: get_lang(1, &groups)?,
+            right_language: get_lang(2, &groups)?,
+        })
+    }
+
 }
 
 
 /// Lists all available genders
+#[allow(missing_docs)]
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Gender {
     Feminine,
@@ -563,6 +595,7 @@ impl FromStr for Gender {
 
 
 /// Lists all available `WordClasses`
+#[allow(missing_docs)]
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Ord, PartialOrd)]
 pub enum WordClass {
     Adjective,
@@ -579,7 +612,7 @@ pub enum WordClass {
 }
 
 impl WordClass {
-    pub fn try_from(s: &str) -> DictResult<Self> {
+    pub(crate) fn try_from(s: &str) -> DictResult<Self> {
         Ok(s.parse()?)
     }
 }

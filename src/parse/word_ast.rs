@@ -1,11 +1,15 @@
+//! Parsing and AST of the bracket syntax of dict.cc,
+//! see [Guidelines](https://contribute.dict.cc/guidelines/)
+
 extern crate nom;
 
-use error::{DictResult, DictError};
-use parse::html::HtmlDecodedDictEntry;
+use error::{DictError, DictResult};
 use nom::GetInput;
-use std::string::ToString;
+use parse::html::HtmlDecodedDictEntry;
 use std::borrow::Borrow;
 use std::fmt;
+use std::ops::Deref;
+use std::string::ToString;
 
 /// Parsing AST node
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -96,8 +100,6 @@ pub struct WordNodes<T: Borrow<str>> {
     nodes: Vec<WordNode<T>>
 }
 
-use std::ops::Deref;
-
 impl<'a, T: Borrow<str>> Deref for WordNodes<T> {
     type Target = [WordNode<T>];
 
@@ -156,7 +158,7 @@ impl<'a> WordNodes<&'a str> {
             })
     }
 
-    pub fn with_fallback_from(s: &'a str) -> Self {
+    fn with_fallback_from(s: &'a str) -> Self {
         match WordNodes::try_from(s) {
             Ok(node) => node,
             Err(err) => {
@@ -171,7 +173,7 @@ impl<'a> WordNodes<&'a str> {
 }
 
 impl<T: Borrow<str>> WordNodes<T> {
-    pub fn build_comments(&self) -> Vec<String> {
+    pub(crate) fn build_comments(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter()
@@ -183,7 +185,7 @@ impl<T: Borrow<str>> WordNodes<T> {
             }).collect()
     }
 
-    pub fn build_acronyms(&self) -> Vec<String> {
+    pub(crate) fn build_acronyms(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter()
@@ -197,7 +199,7 @@ impl<T: Borrow<str>> WordNodes<T> {
             .collect()
     }
 
-    pub fn build_genders(&self) -> Vec<String> {
+    pub(crate) fn build_genders(&self) -> Vec<String> {
         use self::WordNode::*;
 
         self.nodes.iter().filter_map(|node| {
@@ -208,7 +210,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         }).collect()
     }
 
-    pub fn build_word_with_optional_parts(&self) -> String {
+    pub(crate) fn build_word_with_optional_parts(&self) -> String {
         use self::WordNode::*;
 
         self.nodes.iter().filter_map(|node| {
@@ -222,7 +224,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         }).collect::<Vec<_>>().join(" ")
     }
 
-    pub fn build_plain_word(&self) -> String {
+    pub(crate) fn build_plain_word(&self) -> String {
         use self::WordNode::*;
 
         self.nodes.iter().filter_map(|node| {
@@ -235,7 +237,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         }).collect::<Vec<_>>().join(" ")
     }
 
-    pub fn build_indexed_word(&self) -> String {
+    pub(crate) fn build_indexed_word(&self) -> String {
         use self::WordNode::*;
 
         self.nodes.iter().filter_map(|node| {
@@ -248,7 +250,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         }).collect::<Vec<_>>().join(" ")
     }
 
-    pub fn count_words(&self) -> u8 {
+    pub(crate) fn count_words(&self) -> u8 {
         use self::WordNode::*;
 
         self.nodes.iter().filter(|&node| {
@@ -259,7 +261,7 @@ impl<T: Borrow<str>> WordNodes<T> {
         }).count() as u8
     }
 
-    pub fn to_colored_string(&self) -> String {
+    pub(crate) fn to_colored_string(&self) -> String {
         self.nodes.iter()
             .map(|word_node| word_node.to_colored_string())
             .collect::<Vec<_>>()
@@ -341,11 +343,11 @@ named!(entry_fragment<&str,WordNode<&str>>, alt!(
 
 named!(entry<&str, Vec<WordNode<&str>> >, many1!( ws!( entry_fragment ) ));
 
+use nom::IResult::*;
+use super::*;
+
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use nom::IResult::*;
-
     #[test]
     fn test_entry_parser() {
         let input = "(optional) word {f} [comment] <foo, bar, baz>";

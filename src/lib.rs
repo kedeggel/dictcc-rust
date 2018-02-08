@@ -1,6 +1,8 @@
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 
+//! Rust API for use of dict.cc translation data
+
 extern crate csv;
 #[macro_use]
 extern crate failure;
