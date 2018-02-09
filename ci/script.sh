@@ -14,8 +14,8 @@ main() {
     cross test --features cli --target $TARGET
     cross test --features cli --target $TARGET --release
 
-    cross run --features cli --target $TARGET -- -d test/database/test_database.txt -t r "*"
-    cross run --features cli --target $TARGET --release -- -d test/database/test_database.txt -t r "*"
+    cross run --features cli --target $TARGET -- -d ./test/database/test_database.txt -t r "*"
+    cross run --features cli --target $TARGET --release -- -d ./test/database/test_database.txt -t r "*"
 }
 
 # we don't run the "test phase" when doing deploys
