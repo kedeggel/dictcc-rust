@@ -7,6 +7,7 @@ use simplelog::{self, LevelFilter, TermLogger};
 use std::default::Default;
 use std::path::PathBuf;
 use std::str::FromStr;
+use error::DictCliError;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]
@@ -23,6 +24,10 @@ pub struct Cli {
     /// Disable colored output.
     #[structopt(short = "c", long = "no-color")]
     pub no_color: bool,
+
+    /// Do not use the configuration file.
+    #[structopt(long = "no-config")]
+    pub no_config: bool,
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short = "v", long = "verbose")]
@@ -49,16 +54,21 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
 
     debug!("cli = {:?}", cli);
 
-    let config = Config::update_with_cli(&cli)?;
-
-    debug!("config = {:?}", config);
-
     if cli.no_color {
         colored::control::set_override(false)
     }
 
-    info!("Using database path: {}", config.get_database_path().display());
-    let dict = Dict::create(config.get_database_path())?;
+    let dict = if cli.no_config {
+        let database_path = cli.database_path.clone().ok_or(DictCliError::NoDatabasePath)?;
+
+        Dict::create(database_path)?
+    } else {
+        let config = Config::update_with_cli(&cli)?;
+
+        debug!("config = {:?}", config);
+
+        Dict::create(config.get_database_path())?
+    };
 
     let mut cli = cli;
 

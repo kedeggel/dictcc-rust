@@ -23,10 +23,10 @@ environment:
     - TARGET: x86_64-pc-windows-msvc
 
     # Testing other channels
-#    - TARGET: x86_64-pc-windows-gnu
-#      RUST_VERSION: nightly
-#    - TARGET: x86_64-pc-windows-msvc
-#      RUST_VERSION: nightly
+    - TARGET: x86_64-pc-windows-gnu
+      RUST_VERSION: nightly
+    - TARGET: x86_64-pc-windows-msvc
+      RUST_VERSION: nightly
 
 install:
   - ps: >-
@@ -49,8 +49,8 @@ test_script:
       cargo build --features cli --target %TARGET% --release &&
       cargo test --features cli --target %TARGET% &&
       cargo test --features cli --target %TARGET% --release &&
-      cargo run --features cli --target %TARGET% -- -d test/database/test_database.txt -t r "*" &&
-      cargo run --features cli --target %TARGET% --release -- -d test/database/test_database.txt -t r "*"
+      cargo run --features cli --target %TARGET% -- -d tests/database/test_database.txt --no-config -t r "*" &&
+      cargo run --features cli --target %TARGET% --release -- -d tests/database/test_database.txt --no-config -t r "*"
     )
 
 before_deploy:
