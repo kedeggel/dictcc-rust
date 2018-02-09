@@ -1,12 +1,45 @@
+//! Grouped representation and pretty printing of `DictQueryResult` in tabular form.
+//!
+//! The grouping is inspired by the [result page of dict.cc](https://www.dict.cc/?s=house).
+//!
+//! The grouping has two layers:
+//! 1. By word count
+//! 2. By word class group.
+//!
+//! # Example Output
+//!
+//! ```ignore
+//! Verbs
+//! --------------------
+//!  Verb | verb | Verb
+//!
+//! Nouns
+//! --------------------------
+//!  DE         | EN   | Noun
+//!  foo        | foo  | Noun
+//!  Substantiv | noun | Noun
+//!
+//! Others
+//! -------------------
+//!  a | c | Adjective
+//!  B | B | Adjective
+//!  c | a | Adjective
+//!
+//! 2 Words: Verbs
+//! ----------------------------
+//!  foo Verb | foo verb | Verb
+//! ```
+
 use super::*;
 
 use itertools::Itertools;
 use itertools::GroupBy;
 use std::vec::IntoIter;
 
-/// Used for grouping entries in the output
+/// Coarse grouping of `WordClass`.
+#[allow(missing_docs)]
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Debug)]
-enum WordClassesGroup {
+pub enum WordClassesGroup {
     Verbs,
     Nouns,
     Others,
@@ -26,9 +59,19 @@ impl<'a> From<&'a [WordClass]> for WordClassesGroup {
     }
 }
 
+/// Grouped representation of `DictQueryResult`.
+///
+/// Implements Display using a formatted and aligned table.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct DictQueryResultGrouped {
     word_count_groups: Vec<DictEntryWordCountGroup>
+}
+
+impl DictQueryResultGrouped {
+    /// Returns a slice of `DictEntryWordCountGroup`.
+    pub fn word_count_groups(&self) -> &[DictEntryWordCountGroup] {
+        &self.word_count_groups
+    }
 }
 
 impl Display for DictQueryResultGrouped {
@@ -71,11 +114,11 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
 
         let get_word_count: fn(&DictEntry) -> u8 = match query_direction {
             QueryDirection::ToRight => |entry: &DictEntry| {
-                entry.source.word_count
+                entry.left_word.word_count
             },
             QueryDirection::Bidirectional => DictEntry::get_max_word_count,
             QueryDirection::ToLeft => |entry: &DictEntry| {
-                entry.translation.word_count
+                entry.right_word.word_count
             },
         };
 
@@ -99,15 +142,15 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
                     let mut entries: Vec<DictEntry> = entries_group.map(|(_, entry)| entry).collect();
 
                     let cmp_left = |left_entry: &DictEntry, right_entry: &DictEntry| {
-                        let left = &left_entry.source.indexed_word;
-                        let right = &right_entry.source.indexed_word;
+                        let left = &left_entry.left_word.indexed_word;
+                        let right = &right_entry.left_word.indexed_word;
 
                         left.cmp(right)
                     };
 
                     let cmp_right = |left_entry: &DictEntry, right_entry: &DictEntry| {
-                        let left = &left_entry.translation.indexed_word;
-                        let right = &right_entry.translation.indexed_word;
+                        let left = &left_entry.right_word.indexed_word;
+                        let right = &right_entry.right_word.indexed_word;
 
                         left.cmp(right)
                     };
@@ -137,10 +180,25 @@ impl From<DictQueryResult> for DictQueryResultGrouped {
     }
 }
 
+/// A group of entries, which have the same word count and are coarsely grouped by word class.
+///
+/// Implements Display using a formatted and aligned table.
 #[derive(Clone, Eq, PartialEq, Debug)]
-struct DictEntryWordCountGroup {
+pub struct DictEntryWordCountGroup {
     word_count: u8,
     word_class_groups: Vec<DictEntryWordClassGroup>,
+}
+
+impl DictEntryWordCountGroup {
+    /// Returns a slice of `DictEntryWordClassGroup`.
+    pub fn word_class_groups(&self) -> &[DictEntryWordClassGroup] {
+        &self.word_class_groups
+    }
+
+    /// The word count of this group.
+    pub fn word_count(&self) -> u8 {
+        self.word_count
+    }
 }
 
 impl Display for DictEntryWordCountGroup {
@@ -167,12 +225,33 @@ impl Display for DictEntryWordCountGroup {
     }
 }
 
+/// A group of entries, which have the same word count and word class group.
+///
+/// Implements Display using a formatted and aligned table.
 #[derive(Clone, Eq, PartialEq, Debug)]
-struct DictEntryWordClassGroup {
+pub struct DictEntryWordClassGroup {
     word_count: u8,
     word_class_group: WordClassesGroup,
     entries: Vec<DictEntry>,
 }
+
+impl DictEntryWordClassGroup {
+    /// Returns a slice of entries in this group.
+    pub fn entries(&self) -> &[DictEntry] {
+        &self.entries
+    }
+
+    /// The word count of this group.
+    pub fn word_count(&self) -> u8 {
+        self.word_count
+    }
+
+    /// The word class group of this entry group.
+    pub fn word_class_group(&self) -> WordClassesGroup {
+        self.word_class_group
+    }
+}
+
 
 impl Display for DictEntryWordClassGroup {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -181,8 +260,8 @@ impl Display for DictEntryWordClassGroup {
 
         // TODO: word classes filter (redundant classes)
         let entry_rows: Vec<_> = self.entries.iter().map(|entry| {
-            let left = &entry.source.to_colored_string();
-            let right = &entry.translation.to_colored_string();
+            let left = &entry.left_word.to_colored_string();
+            let right = &entry.right_word.to_colored_string();
 
             let word_classes = &entry.word_classes.iter().map(|word_class| format!("{:?}", word_class)).collect::<Vec<_>>().join(", ");
 

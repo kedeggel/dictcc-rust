@@ -1,3 +1,8 @@
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
+
+//! Rust API for reading and querying the dict.cc offline translation database.
+
 extern crate csv;
 #[macro_use]
 extern crate failure;
@@ -15,6 +20,10 @@ extern crate prettytable;
 extern crate itertools;
 extern crate colored;
 
-pub mod parse;
-pub mod dict;
+
+mod parse;
+mod dict;
 pub mod error;
+
+pub use dict::*;
+pub use parse::word_ast;

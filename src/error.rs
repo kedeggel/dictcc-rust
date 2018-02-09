@@ -1,16 +1,19 @@
+//! Error handling.
+
 extern crate csv;
 extern crate failure;
 extern crate htmlescape;
 extern crate nom;
 extern crate regex;
 
-use std::io;
-
-use failure::{Backtrace, Context};
 use dict::Language;
+use failure::Backtrace;
 
+/// Type alias for Result with preconfigured error type `DictError`.
 pub type DictResult<T> = ::std::result::Result<T, DictError>;
 
+/// All errors that can be returned by this crate.
+#[allow(missing_docs)]
 #[derive(Debug, Fail)]
 pub enum DictError {
     #[fail(display = "Unknown gender name: {}", name)]
@@ -45,9 +48,6 @@ pub enum DictError {
         backtrace: Backtrace,
     },
 
-    #[fail(display = "{}", _0)]
-    Io(#[cause] io::Error),
-
     #[fail(display = "Could not open dictionary file at {:?}: {}", path, cause)]
     FileOpen {
         path: String,
@@ -75,9 +75,6 @@ pub enum DictError {
         remaining_input: String,
     },
 
-    #[fail(display = "Parse error with context: {:?}", _0)]
-    Context(#[cause] Context<String>, Backtrace),
-
     #[fail(display = "{}", _0)]
     Regex(#[cause] regex::Error, Backtrace),
 }
@@ -91,12 +88,6 @@ impl From<csv::Error> for DictError {
 impl From<htmlescape::DecodeErr> for DictError {
     fn from(err: htmlescape::DecodeErr) -> Self {
         DictError::HtmlDecode(err, Backtrace::new())
-    }
-}
-
-impl From<Context<String>> for DictError {
-    fn from(context: Context<String>) -> Self {
-        DictError::Context(context, Backtrace::new())
     }
 }
 
