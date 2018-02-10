@@ -123,5 +123,4 @@ branches:
     - master
 
 notifications:
-  email:
-    on_success: never
+  email: false
