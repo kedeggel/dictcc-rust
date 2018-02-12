@@ -1,13 +1,19 @@
 [package]
 name = "dictcc"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Mathias Lengler", "Kevin Deggelmann"]
 license = "GPL-3.0"
-description = "Rust API for use of dict.cc translation data."
+description = "Rust API for reading and querying the dict.cc offline translation database."
+readme = "README.md"
 repository = "https://github.com/kedeggel/dictcc-rust"
+categories = ["command-line-utilities", "text-processing"]
 exclude = [
     "ci/*"
 ]
+
+[badges]
+travis-ci = { repository = "kedeggel/dictcc-rust" }
+appveyor = { repository = "kedeggel/dictcc-rust" }
 
 [dependencies]
 csv = "1.0.0-beta.5"
