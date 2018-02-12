@@ -4,11 +4,29 @@
 [![Build Status](https://travis-ci.org/kedeggel/dictcc-rust.svg?branch=master)](https://travis-ci.org/kedeggel/dictcc-rust)
 [![Build status](https://ci.appveyor.com/api/projects/status/hdtge4kfoj961ur7/branch/master?svg=true)](https://ci.appveyor.com/project/kedeggel/dictcc-rust/branch/master)
 
-Rust API for use of dict.cc translation data
+Rust API for reading and querying the dict.cc offline translation database.
 
-## Example
+## Download dict.cc translation database
+
+Due to licensing requirements of dict.cc, we are not allowed to provide the database as part of the crate.
+
+You need to request a [download link on dict.cc](https://www1.dict.cc/translation_file_request.php?l=e).
+
+## CLI
+
+Install using cargo:
 
 ```
+cargo install --features=cli dictcc
+```
+
+or [download precompiled binaries](https://github.com/kedeggel/dictcc-rust/releases).
+
+Run `dictcc --help` for further usage information.
+
+## API Example usage
+
+```rust
 extern crate dictcc;
 
 use dictcc::Dict;
