@@ -49,6 +49,8 @@ impl Dict {
     ///
     /// Reads the csv, decodes HTML-encoded characters and parses the dict.cc bracket syntax into a AST.
     pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
+        info!("Using database path: {}", path.as_ref().display());
+
         let mut reader = get_csv_reader_from_path(&path)?;
         let languages = DictLanguagePair::from_path(&path)?;
         let records = reader
