@@ -3,8 +3,12 @@ extern crate colored;
 use config::Config;
 use dictcc::{Dict, Language, QueryType};
 use error::DictCliResult;
+#[cfg(unix)]
+use pager::Pager;
 use simplelog::{self, LevelFilter, TermLogger};
 use std::default::Default;
+use std::io;
+use std::io::prelude::*;
 use std::path::PathBuf;
 use std::str::FromStr;
 use error::DictCliError;
@@ -149,7 +153,13 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
     } else {
         let query_result_grouped = query_result.into_grouped();
 
-        println!("{}", query_result_grouped);
+        let mut stdout = io::stdout();
+
+        if !cli.interactive_mode {
+            #[cfg(unix)] Pager::with_pager("less -r").setup();
+        }
+
+        writeln!(&mut stdout, "{}", query_result_grouped)?;
     }
 
     Ok(())
