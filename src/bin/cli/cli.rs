@@ -145,7 +145,9 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
 
         let mut stdout = io::stdout();
 
-        #[cfg(unix)] Pager::with_pager("less -r").setup();
+        if !cli.interactive_mode {
+            #[cfg(unix)] Pager::with_pager("less -r").setup();
+        }
 
         writeln!(&mut stdout, "{}", query_result_grouped)?;
     }
