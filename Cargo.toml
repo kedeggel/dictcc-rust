@@ -1,9 +1,10 @@
 [package]
 name = "dictcc"
-version = "0.0.0"
+version = "0.1.0-alpha.2"
 authors = ["Mathias Lengler", "Kevin Deggelmann"]
 license = "GPL-3.0"
 description = "Rust API for use of dict.cc translation data."
+repository = "https://github.com/kedeggel/dictcc-rust"
 
 [dependencies]
 csv = "1.0.0-beta.5"
