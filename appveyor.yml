@@ -49,8 +49,8 @@ test_script:
       cargo build --features cli --target %TARGET% --release &&
       cargo test --features cli --target %TARGET% &&
       cargo test --features cli --target %TARGET% --release &&
-      cargo run --features cli --target %TARGET% -- -d tests/database/test_database.txt --no-config -t r "*" &&
-      cargo run --features cli --target %TARGET% --release -- -d tests/database/test_database.txt --no-config -t r "*"
+      cargo run --features cli --target %TARGET% -- -d tests/database/test_database.txt --no-config --no-pager -t r "*" &&
+      cargo run --features cli --target %TARGET% --release -- -d tests/database/test_database.txt --no-config --no-pager -t r "*"
     )
 
 before_deploy:

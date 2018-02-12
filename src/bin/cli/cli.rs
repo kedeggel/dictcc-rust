@@ -33,6 +33,10 @@ pub struct Cli {
     #[structopt(long = "no-config")]
     pub no_config: bool,
 
+    /// Do not use a pager to buffer long output.
+    #[structopt(long = "no-pager")]
+    pub no_pager: bool,
+
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short = "v", long = "verbose")]
     pub verbose: u64,
@@ -155,7 +159,7 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
 
         let mut stdout = io::stdout();
 
-        if !cli.interactive_mode {
+        if !cli.interactive_mode && !cli.no_pager {
             #[cfg(unix)] Pager::with_pager("less -r").setup();
         }
 
