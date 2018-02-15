@@ -271,7 +271,7 @@ impl<T: Borrow<str>> WordNodes<T> {
 
 /// Word Abstract-Syntax-Tree
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct WordNodesDictEntry<T: Borrow<str>> {
+pub struct WordNodesDictEntry<T: Borrow<str>> {
     /// Source word, parsed into WordNodes
     pub left_word_nodes: WordNodes<T>,
     /// Target word, parsed into WordNodes

@@ -36,14 +36,15 @@ impl DictQueryResult {
 
 use csv::{DeserializeRecordsIter, Reader};
 
-struct DictReader<P: AsRef<Path>> {
+#[derive(Debug)]
+pub struct DictReader<P: AsRef<Path>> {
     reader: Reader<File>,
     languages: DictLanguagePair,
     path: P,
 }
 
 impl<P: AsRef<Path>> DictReader<P> {
-    fn new(path: P) -> DictResult<Self> {
+    pub fn new(path: P) -> DictResult<Self> {
         info!("Using database path: {}", path.as_ref().display());
 
         Ok(DictReader {
@@ -53,16 +54,23 @@ impl<P: AsRef<Path>> DictReader<P> {
         })
     }
 
-    fn entries<'r>(&'r mut self) -> Entries<'r> {
+    pub fn entries<'r>(&'r mut self) -> Entries<'r> {
         let records = self.reader.deserialize();
 
         Entries {
             records,
         }
     }
+
+    pub fn raw_entries<'r>(&'r mut self) -> Box<Iterator<Item=DictResult<RawDictEntry>> + 'r> {
+        Box::new(self.reader.deserialize()
+            .filter(incomplete_records_filter)
+            .map(|record| Ok(record?)))
+    }
 }
 
-struct Entries<'r> {
+#[allow(missing_debug_implementations)]
+pub struct Entries<'r> {
     records: DeserializeRecordsIter<'r, File, RawDictEntry>,
 }
 
@@ -312,7 +320,7 @@ pub struct DictWord {
     ///
     ///  Syntax:
     /// `(a) Foo` -> `a foo`
-    indexed_word: String,
+    pub indexed_word: String,
 
     /// The AST (abstract syntax tree) of the complete word.
     pub word_nodes: WordNodes<String>,

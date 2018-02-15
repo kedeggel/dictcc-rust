@@ -235,7 +235,7 @@ There are a few concerns with these: Can the different query types be implemente
 
 One could think of a hybrid approach: map from a data structure mentioned above to an index in the CSV file and parse the the entries on demand. This sounds promising, but could be quite complex and fragile.
 
-Lastly, there a approches based on the file system:
+Lastly, there a approaches based on the file system:
 
 - Write some parsed Rust data structure to disk. This could help with the initial load time, as it is ca. 2/3 dominated by parsing and string conversions (measured with Intel VTune). But the overhead of reading and converting from disk is unknown. This also does not addresses the RAM usage.
 - Use a database. This is probably the right option (Don't reinvent the wheel). But there are also multiple options and strategies to choose from:
