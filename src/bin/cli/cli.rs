@@ -159,7 +159,7 @@ fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
 
         let mut stdout = io::stdout();
 
-        if !cli.interactive_mode && !cli.no_pager {
+        if !(cli.interactive_mode || cli.no_pager) {
             #[cfg(unix)] Pager::with_pager("less -r").setup();
         }
 

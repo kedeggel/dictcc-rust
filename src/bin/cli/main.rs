@@ -14,6 +14,7 @@ extern crate simplelog;
 extern crate log;
 #[cfg(unix)]
 extern crate pager;
+extern crate dunce;
 
 use cli::{Cli, run_cli};
 use std::io::ErrorKind;

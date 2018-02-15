@@ -1,11 +1,12 @@
 use app_dirs::*;
 use cli::Cli;
 use error::{DictCliError, DictCliResult};
-use std::fs::{canonicalize, File};
+use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use toml;
+use dunce::canonicalize;
 
 const APP_INFO: AppInfo = AppInfo { name: "dictcc-rust", author: "DeggelmannAndLengler" };
 const CONFIG_NAME: &str = "config.toml";
