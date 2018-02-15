@@ -34,6 +34,57 @@ impl DictQueryResult {
     }
 }
 
+use csv::{DeserializeRecordsIter, Reader};
+
+struct DictReader<P: AsRef<Path>> {
+    reader: Reader<File>,
+    languages: DictLanguagePair,
+    path: P,
+}
+
+impl<P: AsRef<Path>> DictReader<P> {
+    fn new(path: P) -> DictResult<Self> {
+        info!("Using database path: {}", path.as_ref().display());
+
+        Ok(DictReader {
+            reader: get_csv_reader_from_path(&path)?,
+            languages: DictLanguagePair::from_path(&path)?,
+            path,
+        })
+    }
+
+    fn entries<'r>(&'r mut self) -> Entries<'r> {
+        let records = self.reader.deserialize();
+
+        Entries {
+            records,
+        }
+    }
+}
+
+struct Entries<'r> {
+    records: DeserializeRecordsIter<'r, File, RawDictEntry>,
+}
+
+impl<'r> Iterator for Entries<'r> {
+    type Item = DictResult<DictEntry>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.records.find(incomplete_records_filter)
+            .map(|record| {
+                let raw_entry: RawDictEntry = record?;
+                trace!("raw_entry = {:#?}", raw_entry);
+                let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
+                trace!("html_decoded_entry = {:#?}", html_decoded_entry);
+                let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
+                trace!("word_ast = {:#?}", word_ast);
+                let entry = DictEntry::from(word_ast);
+                trace!("entry = {:#?}", entry);
+                Ok(entry)
+            })
+    }
+}
+
 /// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Dict {
@@ -49,30 +100,14 @@ impl Dict {
     ///
     /// Reads the csv, decodes HTML-encoded characters and parses the dict.cc bracket syntax into a AST.
     pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
-        info!("Using database path: {}", path.as_ref().display());
+        let mut dict_reader = DictReader::new(path)?;
 
-        let mut reader = get_csv_reader_from_path(&path)?;
-        let languages = DictLanguagePair::from_path(&path)?;
-        let records = reader
-            .deserialize()
-            .filter(incomplete_records_filter);
+        let entries: DictResult<Vec<DictEntry>> = dict_reader.entries().collect();
 
-        let mut entries = vec![];
+        let languages = dict_reader.languages;
 
-        for record in records {
-            let raw_entry: RawDictEntry = record?;
-            trace!("raw_entry = {:#?}", raw_entry);
-            let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
-            trace!("html_decoded_entry = {:#?}", html_decoded_entry);
-            let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
-            trace!("word_ast = {:#?}", word_ast);
-            if let Ok(entry) = DictEntry::try_from(word_ast) {
-                trace!("entry = {:#?}", entry);
-                entries.push(entry);
-            };
-        }
         Ok(Self {
-            entries,
+            entries: entries?,
             languages,
         })
     }
@@ -248,20 +283,17 @@ pub struct DictEntry {
     pub word_classes: Vec<WordClass>,
 }
 
-impl DictEntry {
-    /// Try to convert from WordNodesDictEntry into DictEntry
-    pub(crate) fn try_from(word_nodes_dict_entry: WordNodesDictEntry<String>) -> DictResult<Self> {
-        let mut classes = Vec::new();
-        for class in word_nodes_dict_entry.word_classes.split_whitespace() {
-            classes.push(WordClass::try_from(class)?);
+impl From<WordNodesDictEntry<String>> for DictEntry {
+    fn from(word_nodes_dict_entry: WordNodesDictEntry<String>) -> Self {
+        DictEntry {
+            left_word: DictWord::from(word_nodes_dict_entry.left_word_nodes),
+            right_word: DictWord::from(word_nodes_dict_entry.right_word_nodes),
+            word_classes: WordClass::with_fallback_from(&word_nodes_dict_entry.word_classes),
         }
-        Ok(DictEntry {
-            left_word: DictWord::try_from(word_nodes_dict_entry.left_word_nodes)?,
-            right_word: DictWord::try_from(word_nodes_dict_entry.right_word_nodes)?,
-            word_classes: classes,
-        })
     }
+}
 
+impl DictEntry {
     fn get_max_word_count(&self) -> u8 {
         use std::cmp::max;
 
@@ -295,16 +327,17 @@ impl Display for DictWord {
     }
 }
 
-impl DictWord {
-    /// Try to convert from a WordNode into a DictWord
-    fn try_from(word_nodes: WordNodes<String>) -> DictResult<Self> {
-        Ok(DictWord {
+impl From<WordNodes<String>> for DictWord {
+    fn from(word_nodes: WordNodes<String>) -> Self {
+        DictWord {
             indexed_word: word_nodes.build_indexed_word(),
             word_count: word_nodes.count_words(),
             word_nodes,
-        })
+        }
     }
+}
 
+impl DictWord {
     fn to_colored_string(&self) -> String {
         self.word_nodes.to_colored_string()
     }
@@ -568,7 +601,6 @@ impl DictLanguagePair {
             right_language: get_lang(2, &groups)?,
         })
     }
-
 }
 
 
@@ -620,6 +652,18 @@ pub enum WordClass {
 }
 
 impl WordClass {
+    fn with_fallback_from(word_classes: &str) -> Vec<Self> {
+        word_classes.split_whitespace().filter_map(|word_class_str| {
+            match WordClass::try_from(word_class_str) {
+                Ok(word_class) => Some(word_class),
+                Err(err) => {
+                    info!("Using WordClass fallback: {}", err);
+                    None
+                }
+            }
+        }).collect()
+    }
+
     pub(crate) fn try_from(s: &str) -> DictResult<Self> {
         Ok(s.parse()?)
     }
