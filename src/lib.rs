@@ -19,6 +19,7 @@ extern crate regex;
 extern crate prettytable;
 extern crate itertools;
 extern crate colored;
+extern crate dunce;
 
 #[cfg(feature = "sqlite")]
 extern crate rusqlite;

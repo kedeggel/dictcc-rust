@@ -2,6 +2,7 @@ extern crate csv;
 
 use std::path::Path;
 use std::fs::File;
+use failure::Backtrace;
 
 use error::{DictResult, DictError};
 
@@ -37,6 +38,7 @@ pub fn get_csv_reader_from_path<P: AsRef<Path>>(path: P) -> DictResult<csv::Read
         .map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: err,
+            backtrace: Backtrace::new(),
         })
 }
 

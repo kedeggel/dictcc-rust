@@ -382,12 +382,14 @@ impl DictLanguagePair {
         let file = File::open(&path).map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: csv::Error::from(err),
+            backtrace: Backtrace::new(),
         })?;
 
         let mut header = String::new();
         let _ = BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: csv::Error::from(err),
+            backtrace: Backtrace::new(),
         })?;
 
         // Since the regex cannot be changed, unwrap is ok here

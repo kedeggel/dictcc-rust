@@ -10,6 +10,7 @@ use std::borrow::Borrow;
 use std::fmt;
 use std::ops::Deref;
 use std::string::ToString;
+use failure::Backtrace;
 
 /// Parsing AST node
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -147,6 +148,7 @@ impl<'a> WordNodes<&'a str> {
                 return Err(DictError::WordASTRemainingInput {
                     word: word.to_string(),
                     remaining_input: remaining_input.to_string(),
+                    backtrace: Backtrace::new(),
                 });
             }
         }
@@ -154,7 +156,11 @@ impl<'a> WordNodes<&'a str> {
         nom_res.to_full_result()
             .map(WordNodes::from)
             .map_err(|err| {
-                DictError::WordASTParse { cause: err, word: word.to_string() }
+                DictError::WordASTParse {
+                    cause: err,
+                    word: word.to_string(),
+                    backtrace: Backtrace::new(),
+                }
             })
     }
 

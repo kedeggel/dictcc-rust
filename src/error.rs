@@ -6,8 +6,12 @@ extern crate htmlescape;
 extern crate nom;
 extern crate regex;
 
+#[cfg(feature = "sqlite")]
+extern crate rusqlite;
+
 use dict::Language;
 use failure::Backtrace;
+use std::io;
 
 /// Type alias for Result with preconfigured error type `DictError`.
 pub type DictResult<T> = ::std::result::Result<T, DictError>;
@@ -19,7 +23,6 @@ pub enum DictError {
     #[fail(display = "Unknown gender name: {}", name)]
     UnknownGender {
         name: String,
-        // TODO: consistent backtrace handling
         backtrace: Backtrace,
     },
     #[fail(display = "Unknown word class: {}", word_class)]
@@ -43,6 +46,13 @@ pub enum DictError {
         backtrace: Backtrace,
     },
 
+    #[fail(display = "Could not completely parse {:?}: remaining input: {:?}", word, remaining_input)]
+    WordASTRemainingInput {
+        word: String,
+        remaining_input: String,
+        backtrace: Backtrace,
+    },
+
     #[fail(display = "Language code not found")]
     LanguageCodeNotFound {
         backtrace: Backtrace,
@@ -52,10 +62,18 @@ pub enum DictError {
     FileOpen {
         path: String,
         #[cause] cause: csv::Error,
+        backtrace: Backtrace,
     },
 
+    #[fail(display = "{}", _0)]
+    Io(#[cause] io::Error, Backtrace),
+
+    #[cfg(feature = "sqlite")]
+    #[fail(display = "Error while interacting with SQLite database: {}", _0)]
+    Rusqlite(#[cause] rusqlite::Error, Backtrace),
+
     #[fail(display = "Incomplete entry in dictionary: {}", _0)]
-    IncompleteEntry(#[cause] csv::Error),
+    IncompleteEntry(#[cause] csv::Error, Backtrace),
 
     #[fail(display = "Could not parse csv: {}", _0)]
     CsvParse(#[cause] csv::Error, Backtrace),
@@ -67,16 +85,24 @@ pub enum DictError {
     WordASTParse {
         word: String,
         cause: nom::IError,
-    },
-
-    #[fail(display = "Could not completely parse {:?}: remaining input: {:?}", word, remaining_input)]
-    WordASTRemainingInput {
-        word: String,
-        remaining_input: String,
+        backtrace: Backtrace,
     },
 
     #[fail(display = "{}", _0)]
     Regex(#[cause] regex::Error, Backtrace),
+}
+
+#[cfg(feature = "sqlite")]
+impl From<rusqlite::Error> for DictError {
+    fn from(err: rusqlite::Error) -> Self {
+        DictError::Rusqlite(err, Backtrace::new())
+    }
+}
+
+impl From<io::Error> for DictError {
+    fn from(err: io::Error) -> Self {
+        DictError::Io(err, Backtrace::new())
+    }
 }
 
 impl From<csv::Error> for DictError {

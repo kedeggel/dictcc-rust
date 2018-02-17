@@ -9,23 +9,25 @@ use parse::raw_csv::RawDictEntry;
 use parse::word_ast::WordNodesDictEntry;
 use std::fs::File;
 use std::path::Path;
+use std::path::PathBuf;
+use dunce::canonicalize;
 
 
 #[derive(Debug)]
-pub struct DictReader<P: AsRef<Path>> {
+pub struct DictReader {
     reader: Reader<File>,
     languages: DictLanguagePair,
-    path: P,
+    dictcc_db_path: PathBuf,
 }
 
-impl<P: AsRef<Path>> DictReader<P> {
-    pub fn new(path: P) -> DictResult<Self> {
-        info!("Using database path: {}", path.as_ref().display());
+impl DictReader {
+    pub fn new<P: AsRef<Path>>(dictcc_db_path: P) -> DictResult<Self> {
+        info!("Using database path: {}", dictcc_db_path.as_ref().display());
 
         Ok(DictReader {
-            reader: get_csv_reader_from_path(&path)?,
-            languages: DictLanguagePair::from_path(&path)?,
-            path,
+            reader: get_csv_reader_from_path(&dictcc_db_path)?,
+            languages: DictLanguagePair::from_path(&dictcc_db_path)?,
+            dictcc_db_path: canonicalize(dictcc_db_path)?,
         })
     }
 
