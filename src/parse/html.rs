@@ -1,6 +1,7 @@
 extern crate htmlescape;
 
 use parse::raw_csv::RawDictEntry;
+use dict::sqlite::EntryQueryRow;
 
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {
@@ -15,6 +16,16 @@ impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
             left_word: html_decode_with_fallback(&raw.left_word),
             right_word: html_decode_with_fallback(&raw.right_word),
             word_classes: raw.word_classes.clone(),
+        }
+    }
+}
+
+impl<'a> From<&'a EntryQueryRow> for HtmlDecodedDictEntry {
+    fn from(query_row: &EntryQueryRow) -> Self {
+        HtmlDecodedDictEntry {
+            left_word: query_row.left_word.clone(),
+            right_word: query_row.right_word.clone(),
+            word_classes: query_row.word_classes.clone(),
         }
     }
 }

@@ -48,7 +48,7 @@ optional = true
 
 [features]
 cli = ["structopt", "structopt-derive", "app_dirs", "toml", "simplelog"]
-sqlite = ["rusqlite"]
+sqlite = ["rusqlite", "simplelog"]
 
 [[bin]]
 name = "dictcc"

@@ -1,20 +1,15 @@
 extern crate dictcc;
 extern crate failure;
+extern crate log;
 extern crate rusqlite;
+extern crate simplelog;
 
-use dictcc::read::DictReader;
-use dictcc::parse::html::HtmlDecodedDictEntry;
-use dictcc::parse::raw_csv::RawDictEntry;
-use dictcc::DictEntry;
-use failure::Error;
-use rusqlite::{Connection, Transaction};
-use dictcc::parse::word_ast::WordNodesDictEntry;
 use dictcc::sqlite::SqliteDict;
+use failure::Error;
+use simplelog::{LevelFilter, TermLogger};
+use dictcc::query::QueryDirection;
 
 fn main() {
-    let version = rusqlite::version();
-    eprintln!("version = {:?}", version);
-
     if let Err(err) = run() {
         eprintln!("{}", err);
         eprintln!("err = {:?}", err);
@@ -22,7 +17,16 @@ fn main() {
 }
 
 fn run() -> Result<(), Error> {
-    SqliteDict::new("database/sqlite/test.db", "database/dictcc_DE-EN.txt")?;
+    TermLogger::init(LevelFilter::Trace, simplelog::Config::default())?;
+
+//    let mut dict = SqliteDict::new("database/sqlite/test.db", "database/dictcc_DE-EN.txt")?;
+    let mut dict = SqliteDict::open("database/sqlite/test.db")?;
+
+    let query_result = dict.query("house", QueryDirection::Bidirectional)?;
+
+    println!("{}", query_result.into_grouped());
+
+    ::std::io::stdin().read_line(&mut "".to_string());
 
     Ok(())
 }

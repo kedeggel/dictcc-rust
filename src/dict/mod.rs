@@ -6,7 +6,7 @@ use parse::word_ast::{WordNodes, WordNodesDictEntry};
 use query::DictQuery;
 use query::QueryDirection;
 use query::QueryType;
-use read::DictReader;
+use read::DictccDBReader;
 use regex::{Captures, Regex};
 use std::fmt::{self, Display, Formatter};
 use std::fs::File;
@@ -35,7 +35,7 @@ impl Dict {
     ///
     /// Reads the csv, decodes HTML-encoded characters and parses the dict.cc bracket syntax into a AST.
     pub fn create<P: AsRef<Path>>(path: P) -> DictResult<Self> {
-        let mut dict_reader = DictReader::new(path)?;
+        let mut dict_reader = DictccDBReader::new(path)?;
 
         let entries: DictResult<Vec<DictEntry>> = dict_reader.entries().collect();
 

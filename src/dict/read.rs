@@ -14,17 +14,17 @@ use dunce::canonicalize;
 
 
 #[derive(Debug)]
-pub struct DictReader {
+pub struct DictccDBReader {
     reader: Reader<File>,
     languages: DictLanguagePair,
     dictcc_db_path: PathBuf,
 }
 
-impl DictReader {
+impl DictccDBReader {
     pub fn new<P: AsRef<Path>>(dictcc_db_path: P) -> DictResult<Self> {
         info!("Using database path: {}", dictcc_db_path.as_ref().display());
 
-        Ok(DictReader {
+        Ok(DictccDBReader {
             reader: get_csv_reader_from_path(&dictcc_db_path)?,
             languages: DictLanguagePair::from_path(&dictcc_db_path)?,
             dictcc_db_path: canonicalize(dictcc_db_path)?,
