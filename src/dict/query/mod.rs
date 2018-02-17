@@ -2,12 +2,14 @@ extern crate csv;
 
 use dict::Dict;
 use dict::DictEntry;
-use dict::grouped::DictQueryResultGrouped;
 use dict::Language;
+use dict::query::grouped::DictQueryResultGrouped;
 use error::{DictError, DictResult};
 use failure::Backtrace;
 use regex::{escape, RegexBuilder};
 use std::str::FromStr;
+
+pub mod grouped;
 
 /// Builder for a `DictQueryResult`.
 #[derive(Debug)]

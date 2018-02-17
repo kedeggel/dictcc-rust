@@ -35,7 +35,7 @@ use dict::query::QueryDirection;
 use itertools::GroupBy;
 use itertools::Itertools;
 use std::vec::IntoIter;
-use super::*;
+use dict::*;
 
 /// Coarse grouping of `WordClass`.
 #[allow(missing_docs)]

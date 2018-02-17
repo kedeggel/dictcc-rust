@@ -25,7 +25,7 @@ extern crate rusqlite;
 
 
 pub mod parse;
-mod dict;
 pub mod error;
+mod dict;
 
 pub use dict::*;

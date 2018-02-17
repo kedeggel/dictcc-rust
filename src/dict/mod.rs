@@ -1,18 +1,11 @@
-pub mod grouped;
-pub mod query;
-pub mod read;
-
-#[cfg(feature = "sqlite")]
-pub mod sqlite;
-
 extern crate csv;
 
-use query::DictQuery;
-use query::QueryDirection;
-use query::QueryType;
 use error::{DictError, DictResult};
 use failure::Backtrace;
 use parse::word_ast::{WordNodes, WordNodesDictEntry};
+use query::DictQuery;
+use query::QueryDirection;
+use query::QueryType;
 use read::DictReader;
 use regex::{Captures, Regex};
 use std::fmt::{self, Display, Formatter};
@@ -20,6 +13,12 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
+
+pub mod query;
+pub mod read;
+
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
 
 /// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
