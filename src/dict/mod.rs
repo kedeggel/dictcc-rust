@@ -1,8 +1,15 @@
+pub mod grouped;
+pub mod query;
+pub mod read;
+
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
+
 extern crate csv;
 
-use dict::query::DictQuery;
-use dict::query::QueryDirection;
-use dict::query::QueryType;
+use query::DictQuery;
+use query::QueryDirection;
+use query::QueryType;
 use error::{DictError, DictResult};
 use failure::Backtrace;
 use parse::word_ast::{WordNodes, WordNodesDictEntry};
@@ -13,11 +20,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::FromStr;
-
-pub mod grouped;
-pub mod query;
-
-
 
 /// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -76,7 +78,6 @@ impl Dict {
         }
     }
 }
-
 
 
 /// Structure that holds the word pair and it's class

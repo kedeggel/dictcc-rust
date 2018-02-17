@@ -20,10 +20,12 @@ extern crate prettytable;
 extern crate itertools;
 extern crate colored;
 
+#[cfg(feature = "sqlite")]
+extern crate rusqlite;
+
 
 pub mod parse;
 mod dict;
 pub mod error;
-pub mod read;
 
 pub use dict::*;
