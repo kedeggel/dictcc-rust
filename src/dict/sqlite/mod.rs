@@ -13,6 +13,8 @@ use dict::query::QueryDirection;
 use error::DictError;
 
 // TODO: Dict/DictQuery trait
+// TODO: Highlight match
+// TODO: replace colored with termcolor and keep tables
 
 #[derive(Debug)]
 pub(crate) struct EntryQueryRow {
@@ -47,8 +49,9 @@ impl SqliteDict {
         let mut stmt = self.conn.prepare(include_str!("sql/query_entry.sql"))?;
 
         // TODO: query builder
-        // TODO: query_direction
-        // TODO: query term SQL-injection
+        // TODO: query direction
+        // TODO: query types
+        // FIXME: query term SQL-injection
         let rows = stmt.query_map(&[&query_term], |row| {
             EntryQueryRow {
                 left_indexed_word: row.get(0),
