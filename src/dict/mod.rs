@@ -3,9 +3,8 @@ extern crate csv;
 use dict::grouped::DictQueryResultGrouped;
 use error::{DictError, DictResult};
 use failure::Backtrace;
-use parse::html::HtmlDecodedDictEntry;
-use parse::raw_csv::{get_csv_reader_from_path, incomplete_records_filter, RawDictEntry};
 use parse::word_ast::{WordNodes, WordNodesDictEntry};
+use read::DictReader;
 use regex::{Captures, escape, Regex, RegexBuilder};
 use std::fmt::{self, Display, Formatter};
 use std::fs::File;
@@ -34,65 +33,6 @@ impl DictQueryResult {
     }
 }
 
-use csv::{DeserializeRecordsIter, Reader};
-
-#[derive(Debug)]
-pub struct DictReader<P: AsRef<Path>> {
-    reader: Reader<File>,
-    languages: DictLanguagePair,
-    path: P,
-}
-
-impl<P: AsRef<Path>> DictReader<P> {
-    pub fn new(path: P) -> DictResult<Self> {
-        info!("Using database path: {}", path.as_ref().display());
-
-        Ok(DictReader {
-            reader: get_csv_reader_from_path(&path)?,
-            languages: DictLanguagePair::from_path(&path)?,
-            path,
-        })
-    }
-
-    pub fn entries<'r>(&'r mut self) -> Entries<'r> {
-        let records = self.reader.deserialize();
-
-        Entries {
-            records,
-        }
-    }
-
-    pub fn raw_entries<'r>(&'r mut self) -> Box<Iterator<Item=DictResult<RawDictEntry>> + 'r> {
-        Box::new(self.reader.deserialize()
-            .filter(incomplete_records_filter)
-            .map(|record| Ok(record?)))
-    }
-}
-
-#[allow(missing_debug_implementations)]
-pub struct Entries<'r> {
-    records: DeserializeRecordsIter<'r, File, RawDictEntry>,
-}
-
-impl<'r> Iterator for Entries<'r> {
-    type Item = DictResult<DictEntry>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.records.find(incomplete_records_filter)
-            .map(|record| {
-                let raw_entry: RawDictEntry = record?;
-                trace!("raw_entry = {:#?}", raw_entry);
-                let html_decoded_entry = HtmlDecodedDictEntry::from(&raw_entry);
-                trace!("html_decoded_entry = {:#?}", html_decoded_entry);
-                let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
-                trace!("word_ast = {:#?}", word_ast);
-                let entry = DictEntry::from(word_ast);
-                trace!("entry = {:#?}", entry);
-                Ok(entry)
-            })
-    }
-}
-
 /// Structure that contains all dictionary entries
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Dict {
@@ -112,7 +52,7 @@ impl Dict {
 
         let entries: DictResult<Vec<DictEntry>> = dict_reader.entries().collect();
 
-        let languages = dict_reader.languages;
+        let languages = dict_reader.languages().clone();
 
         Ok(Self {
             entries: entries?,
@@ -579,7 +519,7 @@ impl DictLanguagePair {
         }
     }
 
-    fn from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLanguagePair> {
+    pub(crate) fn from_path<P: AsRef<Path>>(path: P) -> DictResult<DictLanguagePair> {
         let file = File::open(&path).map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: csv::Error::from(err),

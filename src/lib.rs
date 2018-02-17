@@ -24,5 +24,6 @@ extern crate colored;
 pub mod parse;
 mod dict;
 pub mod error;
+pub mod read;
 
 pub use dict::*;

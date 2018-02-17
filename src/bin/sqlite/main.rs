@@ -2,7 +2,7 @@ extern crate dictcc;
 extern crate failure;
 extern crate rusqlite;
 
-use dictcc::DictReader;
+use dictcc::read::DictReader;
 use dictcc::parse::html::HtmlDecodedDictEntry;
 use dictcc::parse::raw_csv::RawDictEntry;
 use dictcc::DictEntry;
