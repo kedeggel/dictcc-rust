@@ -1,7 +1,9 @@
 extern crate colored;
 
 use config::Config;
-use dictcc::{Dict, Language, QueryType};
+use dictcc::{Dict, Language};
+use dictcc::query::QueryType;
+use error::DictCliError;
 use error::DictCliResult;
 #[cfg(unix)]
 use pager::Pager;
@@ -11,7 +13,6 @@ use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::str::FromStr;
-use error::DictCliError;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]

@@ -30,11 +30,12 @@
 //!  foo Verb | foo verb | Verb
 //! ```
 
-use super::*;
-
-use itertools::Itertools;
+use dict::query::DictQueryResult;
+use dict::query::QueryDirection;
 use itertools::GroupBy;
+use itertools::Itertools;
 use std::vec::IntoIter;
+use super::*;
 
 /// Coarse grouping of `WordClass`.
 #[allow(missing_docs)]
