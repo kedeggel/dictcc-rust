@@ -1,7 +1,7 @@
 extern crate colored;
 
 use config::Config;
-use dictcc::{Dict, Language};
+use dictcc::{VecDict, Language};
 use dictcc::query::QueryType;
 use error::DictCliError;
 use error::DictCliResult;
@@ -70,13 +70,13 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
     let dict = if cli.no_config {
         let database_path = cli.database_path.clone().ok_or(DictCliError::NoDatabasePath)?;
 
-        Dict::create(database_path)?
+        VecDict::create(database_path)?
     } else {
         let config = Config::update_with_cli(&cli)?;
 
         debug!("config = {:?}", config);
 
-        Dict::create(config.get_database_path())?
+        VecDict::create(config.get_database_path())?
     };
 
     let mut cli = cli;
@@ -142,7 +142,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
 }
 
 
-fn run_query(cli: &Cli, dict: &Dict) -> DictCliResult<()> {
+fn run_query(cli: &Cli, dict: &VecDict) -> DictCliResult<()> {
     let mut query = dict.query(cli.query.as_ref().unwrap());
 
     if let Some(ref language) = cli.language {

@@ -1,9 +1,9 @@
 extern crate dictcc;
 
-use dictcc::Dict;
+use dictcc::VecDict;
 
 fn main() {
-    let dict = Dict::create("test/database/test_database.txt").unwrap();
+    let dict = VecDict::create("test/database/test_database.txt").unwrap();
 
     let foo = dict.query("foo").exact().execute().unwrap().into_grouped();
 

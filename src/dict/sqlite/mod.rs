@@ -12,7 +12,6 @@ use dict::query::DictQueryResult;
 use dict::query::QueryDirection;
 use error::DictError;
 
-// TODO: Dict/DictQuery trait
 // TODO: Highlight match
 // TODO: replace colored with termcolor and keep tables
 

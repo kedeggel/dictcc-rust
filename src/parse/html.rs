@@ -1,6 +1,7 @@
 extern crate htmlescape;
 
 use parse::raw_csv::RawDictEntry;
+#[cfg(feature = "sqlite")]
 use dict::sqlite::EntryQueryRow;
 
 #[derive(Debug)]
@@ -20,6 +21,7 @@ impl<'a> From<&'a RawDictEntry> for HtmlDecodedDictEntry {
     }
 }
 
+#[cfg(feature = "sqlite")]
 impl<'a> From<&'a EntryQueryRow> for HtmlDecodedDictEntry {
     fn from(query_row: &EntryQueryRow) -> Self {
         HtmlDecodedDictEntry {

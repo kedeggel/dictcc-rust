@@ -31,8 +31,8 @@ impl DictccDBReader {
         })
     }
 
-    pub fn languages(&self) -> &DictLanguagePair {
-        &self.languages
+    pub fn into_languages(self) -> DictLanguagePair {
+        self.languages
     }
 
     pub fn entries<'r>(&'r mut self) -> Entries<'r> {

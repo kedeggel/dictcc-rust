@@ -28,6 +28,7 @@ prettytable-rs = "0.6.7"
 itertools = "0.7.6"
 colored = "1.6.0"
 dunce = "0.1.1"
+termcolor = "0.3.5"
 
 # CLI Depedencies
 structopt = {version = "0.1", optional = true }

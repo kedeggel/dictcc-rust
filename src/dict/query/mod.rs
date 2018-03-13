@@ -1,6 +1,6 @@
 extern crate csv;
 
-use dict::Dict;
+use dict::VecDict;
 use dict::DictEntry;
 use dict::Language;
 use dict::query::grouped::DictQueryResultGrouped;
@@ -13,14 +13,14 @@ pub mod grouped;
 
 /// Builder for a `DictQueryResult`.
 #[derive(Debug)]
-pub struct DictQuery<'a, 'b> {
-    pub(crate) dict: &'a Dict,
+pub struct VecDictQuery<'a, 'b> {
+    pub(crate) dict: &'a VecDict,
     pub(crate) query_term: &'b str,
     pub(crate) query_type: QueryType,
     pub(crate) query_direction: QueryDirection,
 }
 
-impl<'a, 'b> DictQuery<'a, 'b> {
+impl<'a, 'b> VecDictQuery<'a, 'b> {
 
     /// Set the query direction.
     pub fn set_direction(&mut self, query_direction: QueryDirection) -> &mut Self {
@@ -35,8 +35,8 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     }
 
     /// Set the query term.
-    pub fn set_term<'c>(self, query_term: &'c str) -> DictQuery<'a, 'c> {
-        DictQuery {
+    pub fn set_term<'c>(self, query_term: &'c str) -> VecDictQuery<'a, 'c> {
+        VecDictQuery {
             dict: self.dict,
             query_term,
             query_type: self.query_type,
@@ -48,7 +48,7 @@ impl<'a, 'b> DictQuery<'a, 'b> {
     ///
     /// Convenience function for `set_query_direction`
     pub fn source_language(&mut self, source_language: &Language) -> DictResult<&mut Self> {
-        let query_direction = self.dict.get_language_pair().infer_query_direction(source_language)?;
+        let query_direction = self.dict.language_pair().infer_query_direction(source_language)?;
         self.set_direction(query_direction);
         Ok(self)
     }

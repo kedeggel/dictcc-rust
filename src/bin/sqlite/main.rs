@@ -26,7 +26,5 @@ fn run() -> Result<(), Error> {
 
     println!("{}", query_result.into_grouped());
 
-    ::std::io::stdin().read_line(&mut "".to_string());
-
     Ok(())
 }
