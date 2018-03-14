@@ -2,7 +2,6 @@ extern crate colored;
 
 use config::Config;
 use dictcc::{VecDict, Language};
-use dictcc::query::QueryType;
 use error::DictCliError;
 use error::DictCliResult;
 #[cfg(unix)]
@@ -46,15 +45,25 @@ pub struct Cli {
     #[structopt(short = "l", long = "language")]
     pub language: Option<Language>,
 
-    /// "w" | "word" - Matches on a word in an entry.
-    /// "e" | "exact" - Must match the complete entry.
-    /// "r" | "regex" - Matches using the regex provided by the user.
-    #[structopt(short = "t", long = "type", default_value = "Word")]
-    pub query_type: QueryType,
-
     /// The query to be translated.
-    #[structopt(required_unless = "interactive_mode")]
+    #[structopt(
+        required_unless = "interactive_mode",
+        required_unless = "manage",
+    )]
     pub query: Option<String>,
+
+    // DB Management
+
+    #[structopt(long = "list", group = "manage")]
+    pub list: bool,
+
+    /// Path to the dict.cc database file. If not specified, the last used path is used instead.
+    /// If there never was a path specified, an error is shown.
+    #[structopt(long = "add", group = "manage", parse(from_os_str))]
+    pub add: Option<PathBuf>,
+
+    #[structopt(long = "delete", group = "manage")]
+    pub delete: Option<String>,
 }
 
 
@@ -124,14 +133,6 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
         Some(Language::from_str(&tmp_lang)?)
     };
 
-    println!("Enter query type (\"w(ord)\" [default], \"e(xact)\", \"r(egex)\"):");
-    let tmp_type = read_stdin_line()?;
-    cli.query_type = if tmp_type == "" {
-        QueryType::Word
-    } else {
-        QueryType::from_str(&tmp_type)?
-    };
-
     println!("Enter query:");
     let query_term = read_stdin_line()?;
     if query_term == "" {
@@ -148,8 +149,6 @@ fn run_query(cli: &Cli, dict: &VecDict) -> DictCliResult<()> {
     if let Some(ref language) = cli.language {
         query.source_language(language)?;
     }
-
-    query.set_type(cli.query_type);
 
     let query_result = query.execute()?;
 
