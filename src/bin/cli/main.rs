@@ -23,7 +23,7 @@ use error::DictCliError;
 
 mod error;
 mod cli;
-mod config;
+mod persistence;
 
 fn main() {
     let cli: Cli = Cli::from_args();

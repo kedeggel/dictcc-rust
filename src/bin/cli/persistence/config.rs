@@ -7,9 +7,9 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use toml;
 use dunce::canonicalize;
+use persistence::APP_INFO;
+use persistence::CONFIG_NAME;
 
-const APP_INFO: AppInfo = AppInfo { name: "dictcc-rust", author: "DeggelmannAndLengler" };
-const CONFIG_NAME: &str = "config.toml";
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {

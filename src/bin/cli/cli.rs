@@ -1,7 +1,6 @@
 extern crate colored;
 
-use config::Config;
-use dictcc::{VecDict, Language};
+use dictcc::{Language};
 use error::DictCliError;
 use error::DictCliResult;
 #[cfg(unix)]
@@ -12,6 +11,8 @@ use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::str::FromStr;
+use persistence::db::ManageDB;
+use dictcc::sqlite::SqliteDict;
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]
@@ -47,8 +48,8 @@ pub struct Cli {
 
     /// The query to be translated.
     #[structopt(
-        required_unless = "interactive_mode",
-        required_unless = "manage",
+    required_unless = "interactive_mode",
+    required_unless = "manage",
     )]
     pub query: Option<String>,
 
@@ -76,17 +77,12 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
         colored::control::set_override(false)
     }
 
-    let dict = if cli.no_config {
-        let database_path = cli.database_path.clone().ok_or(DictCliError::NoDatabasePath)?;
+    if let Some(management) = Into::<Option<ManageDB>>::into(&cli) {
+        management.execute();
+        return Ok(());
+    }
 
-        VecDict::create(database_path)?
-    } else {
-        let config = Config::update_with_cli(&cli)?;
-
-        debug!("config = {:?}", config);
-
-        VecDict::create(config.get_database_path())?
-    };
+    let dict = SqliteDict::open(ManageDB::sqlite_db_path()?)?;
 
     let mut cli = cli;
 
@@ -101,6 +97,7 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
             run_query(&cli, &dict)?;
         }
     }
+
     Ok(())
 }
 
@@ -143,7 +140,7 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
 }
 
 
-fn run_query(cli: &Cli, dict: &VecDict) -> DictCliResult<()> {
+fn run_query(cli: &Cli, dict: &SqliteDict) -> DictCliResult<()> {
     let mut query = dict.query(cli.query.as_ref().unwrap());
 
     if let Some(ref language) = cli.language {

@@ -54,7 +54,7 @@ sqlite = ["rusqlite", "simplelog"]
 [[bin]]
 name = "dictcc"
 path = "src/bin/cli/main.rs"
-required-features = ["cli"]
+required-features = ["cli", "sqlite"]
 
 [[bin]]
 name = "sqlite"

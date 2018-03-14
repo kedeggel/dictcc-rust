@@ -2,7 +2,7 @@ extern crate htmlescape;
 
 use parse::raw_csv::RawDictEntry;
 #[cfg(feature = "sqlite")]
-use dict::sqlite::EntryQueryRow;
+use dict::sqlite::query::EntryQueryRow;
 
 #[derive(Debug)]
 pub struct HtmlDecodedDictEntry {

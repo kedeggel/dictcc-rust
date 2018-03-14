@@ -8,23 +8,15 @@ use parse::word_ast::WordNodesDictEntry;
 use error::DictResult;
 use rusqlite::{Connection, Transaction};
 use std::path::Path;
-use dict::query::DictQueryResult;
+use dict::sqlite::query::SqliteDictQuery;
 use dict::query::QueryDirection;
-use error::DictError;
+use dict::language::DictLanguagePair;
+
+pub mod query;
 
 // TODO: Highlight match
 // TODO: replace colored with termcolor and keep tables
 
-#[derive(Debug)]
-pub(crate) struct EntryQueryRow {
-    pub(crate) left_indexed_word: String,
-    pub(crate) right_indexed_word: String,
-    pub(crate) left_word: String,
-    pub(crate) right_word: String,
-    pub(crate) word_classes: String,
-    pub(crate) highlight_left_indexed_word: String,
-    pub(crate) highlight_right_indexed_word: String,
-}
 
 #[derive(Debug)]
 pub struct SqliteDict {
@@ -36,44 +28,10 @@ impl SqliteDict {
         let version = rusqlite::version();
         debug!("version = {:?}", version);
 
-
         let conn = Connection::open(sqlite_db_path)?;
 
         Ok(SqliteDict {
             conn,
-        })
-    }
-
-    pub fn query(&mut self, query_term: &str, query_direction: QueryDirection) -> DictResult<DictQueryResult> {
-        let mut stmt = self.conn.prepare(include_str!("sql/query_entry.sql"))?;
-
-        // TODO: query builder
-        // TODO: query direction
-        // TODO: query types
-        // FIXME: query term SQL-injection
-        let rows = stmt.query_map(&[&query_term], |row| {
-            EntryQueryRow {
-                left_indexed_word: row.get(0),
-                right_indexed_word: row.get(1),
-                left_word: row.get(2),
-                right_word: row.get(3),
-                word_classes: row.get(4),
-                highlight_left_indexed_word: row.get(5),
-                highlight_right_indexed_word: row.get(6),
-            }
-        })?.map(|res| res.map_err(DictError::from)).collect::<DictResult<Vec<EntryQueryRow>>>()?;
-
-        let entries = rows.iter()
-            .map(|entry_query_row| {
-                let html_decoded_entry = HtmlDecodedDictEntry::from(entry_query_row);
-                let word_ast = WordNodesDictEntry::from(&html_decoded_entry);
-                let entry = DictEntry::from(word_ast);
-                entry
-            }).collect();
-
-        Ok(DictQueryResult {
-            entries,
-            query_direction,
         })
     }
 
@@ -94,6 +52,19 @@ impl SqliteDict {
         sql_dict.seed_db(&mut dict_reader)?;
 
         Ok(sql_dict)
+    }
+
+    pub fn query<'a, 'b>(&'a self, query_term: &'b str) -> SqliteDictQuery<'a, 'b> {
+        SqliteDictQuery {
+            dict: self,
+            query_term,
+            query_direction: QueryDirection::Bidirectional,
+        }
+    }
+
+    /// Return the language pair of the dictionary.
+    fn language_pair(&self) -> &DictLanguagePair {
+        unimplemented!()
     }
 
     fn seed_db(&mut self, mut reader: &mut DictccDBReader) -> DictResult<()> {
