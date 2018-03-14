@@ -1,54 +1,73 @@
 use app_dirs::*;
 use std::path::Path;
 use cli::Cli;
-use dictcc::sqlite::SqliteDict;
+use dictcc::sqlite::SqliteController;
 use error::DictCliResult;
 use std::path::PathBuf;
 use persistence::APP_INFO;
 use persistence::DB_NAME;
+use error::DictCliError;
 
-pub enum ManageDB<'a, 'b> {
+pub fn sqlite_db_path() -> DictCliResult<PathBuf> {
+    let mut user_config_path = app_root(AppDataType::UserData, &APP_INFO)?;
+
+    user_config_path.push(DB_NAME);
+
+    Ok(user_config_path)
+}
+
+pub enum DBAction<'a, 'b> {
     List,
     Add(&'a Path),
     Delete(&'b str),
 }
 
-impl<'a, 'b> ManageDB<'a, 'b> {
+impl<'a, 'b> DBAction<'a, 'b> {
     pub fn execute(self) -> DictCliResult<()> {
+        let mut controller = SqliteController::new(sqlite_db_path()?)?;
         match self {
-            ManageDB::List => {
-                unimplemented!()
+            DBAction::List => {
+                let dicts = controller.list_dicts()?;
+
+                // TODO: format
+                eprintln!("dicts = {:#?}", dicts);
             }
-            ManageDB::Add(dictcc_db_path) => {
-                SqliteDict::new(ManageDB::sqlite_db_path()?, dictcc_db_path)?;
+            DBAction::Add(dictcc_db_path) => {
+                controller.add_dict(dictcc_db_path)?;
             }
-            ManageDB::Delete(dictcc_db_name) => {
-                unimplemented!()
+            DBAction::Delete(dictcc_db_name) => {
+                let dicts = controller.list_dicts()?;
+
+                let opt_id = dicts.into_iter().filter_map(|metadata| {
+                    if metadata.languages.to_string() == dictcc_db_name {
+                        Some(metadata.dict_id)
+                    } else {
+                        None
+                    }
+                }).next();
+
+                if let Some(id) = opt_id {
+                    controller.delete(&id)?;
+                } else {
+                    return Err(DictCliError::InvalidDictId(dictcc_db_name.to_string()))
+                }
             }
         }
 
         Ok(())
     }
-
-    pub fn sqlite_db_path() -> DictCliResult<PathBuf> {
-        let mut user_config_path = app_root(AppDataType::UserData, &APP_INFO)?;
-
-        user_config_path.push(DB_NAME);
-
-        Ok(user_config_path)
-    }
 }
 
-impl<'a> From<&'a Cli> for Option<ManageDB<'a, 'a>> {
+impl<'a> From<&'a Cli> for Option<DBAction<'a, 'a>> {
     fn from(cli: &'a Cli) -> Self {
         let &Cli { ref list, ref add, ref delete, .. } = cli;
 
         if *list {
-            Some(ManageDB::List)
+            Some(DBAction::List)
         } else if let &Some(ref path) = add {
-            Some(ManageDB::Add(&path))
+            Some(DBAction::Add(&path))
         } else if let &Some(ref name) = delete {
-            Some(ManageDB::Delete(&name))
+            Some(DBAction::Delete(&name))
         } else {
             None
         }

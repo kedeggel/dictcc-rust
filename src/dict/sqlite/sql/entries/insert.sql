@@ -1,4 +1,4 @@
-INSERT INTO entries (
+INSERT INTO :dict_id (
   left_indexed_word,
   right_indexed_word,
   left_word,

@@ -75,6 +75,43 @@ pub enum Language {
     },
 }
 
+impl Language {
+    pub fn language_code(&self) -> String {
+        use self::Language::*;
+
+        match *self {
+            SQ => "SQ".to_string(),
+            BS => "BS".to_string(),
+            BG => "BG".to_string(),
+            HR => "HR".to_string(),
+            CS => "CS".to_string(),
+            DA => "DA".to_string(),
+            NL => "NL".to_string(),
+            EN => "EN".to_string(),
+            EO => "EO".to_string(),
+            FI => "FI".to_string(),
+            FR => "FR".to_string(),
+            DE => "DE".to_string(),
+            EL => "EL".to_string(),
+            HU => "HU".to_string(),
+            IS => "IS".to_string(),
+            IT => "IT".to_string(),
+            LA => "LA".to_string(),
+            NO => "NO".to_string(),
+            PL => "PL".to_string(),
+            PT => "PT".to_string(),
+            RO => "RO".to_string(),
+            RU => "RU".to_string(),
+            SR => "SR".to_string(),
+            SK => "SK".to_string(),
+            ES => "ES".to_string(),
+            SV => "SV".to_string(),
+            TR => "TR".to_string(),
+            Other { ref language_code } => language_code.clone(),
+        }
+    }
+}
+
 impl FromStr for Language {
     type Err = DictError;
 
@@ -111,7 +148,7 @@ impl FromStr for Language {
             "ES" => ES,
             "SV" => SV,
             "TR" => TR,
-            _ => Other { language_code: s.to_string() }
+            _ => Other { language_code: s.to_uppercase() }
         })
     }
 }
@@ -162,6 +199,12 @@ pub struct DictLanguagePair {
     pub right_language: Language,
 }
 
+impl Display for DictLanguagePair {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}_{}", self.left_language.language_code(), self.right_language.language_code())
+    }
+}
+
 impl DictLanguagePair {
     /// Infers the `QueryDirection` based on a given language.
     ///
@@ -190,7 +233,7 @@ impl DictLanguagePair {
         })?;
 
         let mut header = String::new();
-        let _ = BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
+        BufReader::new(file).read_line(&mut header).map_err(|err| DictError::FileOpen {
             path: format!("{}", path.as_ref().display()),
             cause: csv::Error::from(err),
             backtrace: Backtrace::new(),

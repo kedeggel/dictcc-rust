@@ -21,13 +21,13 @@ pub(crate) struct EntryQueryRow {
 
 /// Builder for a `DictQueryResult`.
 #[derive(Debug)]
-pub struct SqliteDictQuery<'a, 'b> {
-    pub(crate) dict: &'a SqliteDict,
+pub struct SqliteDictQuery<'a, 'b, 'conn: 'a> {
+    pub(crate) dict: &'a SqliteDict<'conn>,
     pub(crate) query_term: &'b str,
     pub(crate) query_direction: QueryDirection,
 }
 
-impl<'a, 'b> SqliteDictQuery<'a, 'b> {
+impl<'a, 'b, 'conn> SqliteDictQuery<'a, 'b, 'conn> {
     /// Set the query direction.
     pub fn set_direction(&mut self, query_direction: QueryDirection) -> &mut Self {
         self.query_direction = query_direction;
@@ -35,7 +35,7 @@ impl<'a, 'b> SqliteDictQuery<'a, 'b> {
     }
 
     /// Set the query term.
-    pub fn set_term<'c>(self, query_term: &'c str) -> SqliteDictQuery<'a, 'c> {
+    pub fn set_term<'c>(self, query_term: &'c str) -> SqliteDictQuery<'a, 'c, 'conn> {
         SqliteDictQuery {
             dict: self.dict,
             query_term,
@@ -53,13 +53,17 @@ impl<'a, 'b> SqliteDictQuery<'a, 'b> {
     }
 
     pub fn execute(&self) -> DictResult<DictQueryResult> {
-        let mut stmt = self.dict.conn.prepare(include_str!("sql/query_entry.sql"))?;
+        let sql = &self.dict.metadata.dict_id.replace(include_str!("sql/entries/query.sql"));
 
-        let query_term = self.query_term;
+        trace!("sql = {}", sql);
+
+        let mut stmt = self.dict.conn.prepare(sql)?;
 
         // TODO: query direction
-        // TODO: query types
-        // FIXME: query term SQL-injection
+        let query_term = format!("\"{}\"", self.query_term.replace("\"", "\\\""));
+
+        debug!("query_term = {}", query_term);
+
         let rows = stmt.query_map(&[&query_term], |row| {
             EntryQueryRow {
                 left_indexed_word: row.get(0),

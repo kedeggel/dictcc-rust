@@ -1,6 +1,6 @@
 extern crate colored;
 
-use dictcc::{Language};
+use dictcc::Language;
 use error::DictCliResult;
 #[cfg(unix)]
 use pager::Pager;
@@ -10,17 +10,15 @@ use std::io;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::str::FromStr;
-use persistence::db::ManageDB;
-use dictcc::sqlite::SqliteDict;
+use persistence::db::DBAction;
+use dictcc::sqlite::SqliteController;
+use persistence::db::sqlite_db_path;
+use error::DictCliError;
+
 
 #[derive(StructOpt, Debug, Clone)]
 #[structopt(name = "dictcc", about = "Offline Translator powered by the database of dict.cc")]
 pub struct Cli {
-    /// Path to the dict.cc database file. If not specified, the last used path is used instead.
-    /// If there never was a path specified, an error is shown.
-    #[structopt(short = "d", long = "database", parse(from_os_str))]
-    pub database_path: Option<PathBuf>,
-
     /// Activates the interactive mode.
     #[structopt(short = "i", long = "interactive")]
     pub interactive_mode: bool,
@@ -52,16 +50,19 @@ pub struct Cli {
     )]
     pub query: Option<String>,
 
-    // DB Management
+    // DB Actions
 
+    /// List all dictionaries in the database.
     #[structopt(long = "list", group = "manage")]
     pub list: bool,
 
-    /// Path to the dict.cc database file. If not specified, the last used path is used instead.
-    /// If there never was a path specified, an error is shown.
+    /// Add a new dictionary to the database.
+    /// Expects a path to a dict.cc database file.
     #[structopt(long = "add", group = "manage", parse(from_os_str))]
     pub add: Option<PathBuf>,
 
+    /// Delete a dictionary from the database.
+    /// Expects the identifier of the dictionary.
     #[structopt(long = "delete", group = "manage")]
     pub delete: Option<String>,
 }
@@ -76,24 +77,24 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
         colored::control::set_override(false)
     }
 
-    if let Some(management) = Into::<Option<ManageDB>>::into(&cli) {
+    if let Some(management) = Into::<Option<DBAction>>::into(&cli) {
         management.execute()?;
         return Ok(());
     }
 
-    let dict = SqliteDict::open(ManageDB::sqlite_db_path()?)?;
-
-    let mut cli = cli;
+    let mut controller = SqliteController::new(sqlite_db_path()?)?;
 
     if cli.query.is_some() {
-        run_query(&cli, &dict)?;
+        run_query(&cli, &mut controller)?;
     }
     if cli.interactive_mode {
+        let mut cli = cli;
+
         loop {
             if !update_cli_interactive(&mut cli)? {
                 break;
             }
-            run_query(&cli, &dict)?;
+            run_query(&cli, &mut controller)?;
         }
     }
 
@@ -139,28 +140,45 @@ fn update_cli_interactive(cli: &mut Cli) -> DictCliResult<bool> {
 }
 
 
-fn run_query(cli: &Cli, dict: &SqliteDict) -> DictCliResult<()> {
-    let mut query = dict.query(cli.query.as_ref().unwrap());
+fn run_query(cli: &Cli, controller: &mut SqliteController) -> DictCliResult<()> {
+    let dicts = controller.list_dicts()?;
 
-    if let Some(ref language) = cli.language {
-        query.source_language(language)?;
+    // TODO: only print biggest result set
+    // TODO: allow narrowing the query to specific dicts
+
+    if dicts.len() == 0 {
+        return Err(DictCliError::NoDictionary)
     }
 
-    let query_result = query.execute()?;
+    for metadata in dicts {
+        println!("Dictionary: {}", metadata.languages);
 
-    if query_result.entries().is_empty() {
-        println!("Sorry, no translations found!");
-    } else {
-        let query_result_grouped = query_result.into_grouped();
+        let mut dict = controller.get_dict(&metadata.dict_id)?;
 
-        let mut stdout = io::stdout();
+        let mut query = dict.query(cli.query.as_ref().unwrap());
 
-        if !(cli.interactive_mode || cli.no_pager) {
-            #[cfg(unix)] Pager::with_pager("less -r").setup();
+        if let Some(ref language) = cli.language {
+            query.source_language(language)?;
         }
 
-        writeln!(&mut stdout, "{}", query_result_grouped)?;
+        let query_result = query.execute()?;
+
+        if query_result.entries().is_empty() {
+            println!("Sorry, no translations found!");
+        } else {
+            let query_result_grouped = query_result.into_grouped();
+
+            let mut stdout = io::stdout();
+
+            if !(cli.interactive_mode || cli.no_pager) {
+                #[cfg(unix)] Pager::with_pager("less -r").setup();
+            }
+
+            writeln!(&mut stdout, "{}", query_result_grouped)?;
+        }
     }
+
+
 
     Ok(())
 }

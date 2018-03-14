@@ -55,10 +55,5 @@ name = "dictcc"
 path = "src/bin/cli/main.rs"
 required-features = ["cli", "sqlite"]
 
-[[bin]]
-name = "sqlite"
-path = "src/bin/sqlite/main.rs"
-required-features = ["sqlite"]
-
 [profile.release]
 lto = true

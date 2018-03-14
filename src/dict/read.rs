@@ -9,30 +9,23 @@ use parse::raw_csv::RawDictEntry;
 use parse::word_ast::WordNodesDictEntry;
 use std::fs::File;
 use std::path::Path;
-use std::path::PathBuf;
 use dunce::canonicalize;
+use dict::sqlite::DictccMetadata;
 
 
 #[derive(Debug)]
-pub struct DictccDBReader {
+pub struct DictccReader {
     reader: Reader<File>,
-    languages: DictLanguagePair,
-    dictcc_db_path: PathBuf,
 }
 
-impl DictccDBReader {
-    pub fn new<P: AsRef<Path>>(dictcc_db_path: P) -> DictResult<Self> {
+impl DictccReader {
+    pub fn new<P: AsRef<Path>>(dictcc_db_path: P) -> DictResult<(Self, DictccMetadata)> {
         info!("Using database path: {}", dictcc_db_path.as_ref().display());
 
-        Ok(DictccDBReader {
+        Ok((DictccReader {
             reader: get_csv_reader_from_path(&dictcc_db_path)?,
-            languages: DictLanguagePair::from_path(&dictcc_db_path)?,
-            dictcc_db_path: canonicalize(dictcc_db_path)?,
-        })
-    }
-
-    pub fn into_languages(self) -> DictLanguagePair {
-        self.languages
+        }, DictccMetadata::new(DictLanguagePair::from_path(&dictcc_db_path)?,
+                               canonicalize(dictcc_db_path)?, )))
     }
 
     pub fn entries<'r>(&'r mut self) -> Entries<'r> {

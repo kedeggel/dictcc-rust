@@ -10,8 +10,11 @@ pub type DictCliResult<T> = ::std::result::Result<T, DictCliError>;
 
 #[derive(Debug, Fail)]
 pub enum DictCliError {
-    #[fail(display = "No database path was specified as an option or in previous usage.")]
-    NoDatabasePath,
+    #[fail(display = "No dictionary has been added.")]
+    NoDictionary,
+
+    #[fail(display = "Invalid dictionary identifier: {}", _0)]
+    InvalidDictId(String),
 
     #[fail(display = "{}", _0)]
     DictError(#[cause] DictError),

@@ -1,4 +1,6 @@
-# DE-EN
+# AA-BB
+# Date and time	2017-12-14 23:57
+# License ...
 
 (optionales) Wort &amp; {f} [Kommentar] <Akronym, anderes Akronym>	(optional) word &amp; {f} [comment] <acronym, other acronym>	verb past-p
 (optionales) Wort {f} [Kommentar] <Akronym, anderes Akronym>	(optional) word {f} [comment] <acronym, other acronym>	noun

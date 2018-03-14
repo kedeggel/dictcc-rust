@@ -43,6 +43,7 @@ fn main() {
         };
 
         error!("{}", err);
+        debug!("{:?}", err);
         std::process::exit(1);
     }
 }

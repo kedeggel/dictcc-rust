@@ -1,0 +1,2 @@
+SELECt *
+FROM dictionaries;

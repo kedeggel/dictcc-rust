@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS entries;
+DROP TABLE IF EXISTS :dict_id;
 
-CREATE VIRTUAL TABLE entries
+CREATE VIRTUAL TABLE :dict_id
   USING fts5(
       left_indexed_word,
       right_indexed_word,
