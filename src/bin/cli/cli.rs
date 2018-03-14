@@ -39,8 +39,8 @@ pub struct Cli {
     pub no_pager: bool,
 
     /// Verbose mode (-v, -vv, -vvv, etc.)
-    #[structopt(short = "v", long = "verbose")]
-    pub verbose: u64,
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
+    pub verbose: u8,
 
     /// In which language the query is written. If not specified, the query is bidirectional.
     #[structopt(short = "l", long = "language")]

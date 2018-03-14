@@ -1,4 +1,4 @@
-DROP TABLE entries;
+DROP TABLE IF EXISTS entries;
 
 CREATE VIRTUAL TABLE entries
   USING fts5(

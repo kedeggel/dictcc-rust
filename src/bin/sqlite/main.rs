@@ -19,7 +19,7 @@ fn main() {
 fn run() -> Result<(), Error> {
     TermLogger::init(LevelFilter::Trace, simplelog::Config::default())?;
 
-//    let mut dict = SqliteDict::new("database/sqlite/test.db", "database/dictcc_DE-EN.txt")?;
+    //let mut dict = SqliteDict::new("database/sqlite/test.db", "database/dictcc_DE-EN.txt")?;
     let mut dict = SqliteDict::open("database/sqlite/test.db")?;
 
     let query_result = dict.query("house", QueryDirection::Bidirectional)?;
