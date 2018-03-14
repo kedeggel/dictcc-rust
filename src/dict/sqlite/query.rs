@@ -28,7 +28,6 @@ pub struct SqliteDictQuery<'a, 'b> {
 }
 
 impl<'a, 'b> SqliteDictQuery<'a, 'b> {
-
     /// Set the query direction.
     pub fn set_direction(&mut self, query_direction: QueryDirection) -> &mut Self {
         self.query_direction = query_direction;
@@ -71,7 +70,9 @@ impl<'a, 'b> SqliteDictQuery<'a, 'b> {
                 highlight_left_indexed_word: row.get(5),
                 highlight_right_indexed_word: row.get(6),
             }
-        })?.map(|res| res.map_err(DictError::from)).collect::<DictResult<Vec<EntryQueryRow>>>()?;
+        })?
+            .map(|res| res.map_err(DictError::from))
+            .collect::<DictResult<Vec<EntryQueryRow>>>()?;
 
         let entries = rows.iter()
             .map(|entry_query_row| {

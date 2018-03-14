@@ -1,7 +1,6 @@
 extern crate colored;
 
 use dictcc::{Language};
-use error::DictCliError;
 use error::DictCliResult;
 #[cfg(unix)]
 use pager::Pager;
@@ -78,7 +77,7 @@ pub fn run_cli(cli: Cli) -> DictCliResult<()> {
     }
 
     if let Some(management) = Into::<Option<ManageDB>>::into(&cli) {
-        management.execute();
+        management.execute()?;
         return Ok(());
     }
 
