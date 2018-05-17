@@ -1,22 +1,23 @@
-extern crate dictcc;
-extern crate structopt;
-#[macro_use]
-extern crate structopt_derive;
 extern crate app_dirs;
+extern crate colored;
+extern crate dictcc;
+extern crate dunce;
 #[macro_use]
 extern crate failure;
-extern crate colored;
-extern crate simplelog;
 #[macro_use]
 extern crate log;
 #[cfg(unix)]
 extern crate pager;
-extern crate dunce;
+extern crate simplelog;
+extern crate structopt;
+#[macro_use]
+extern crate structopt_derive;
 
-use cli::{Cli, run_cli};
+use cli::{run_cli, Cli};
 use std::io::ErrorKind;
 use structopt::StructOpt;
 use error::DictCliError;
+use std::time::Duration;
 
 mod error;
 mod cli;
@@ -38,7 +39,7 @@ fn main() {
                         DictCliError::Io(err)
                     }
                 }
-            },
+            }
             err => err,
         };
 

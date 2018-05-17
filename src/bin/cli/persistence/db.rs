@@ -33,6 +33,8 @@ impl<'a, 'b> DBAction<'a, 'b> {
                 eprintln!("dicts = {:#?}", dicts);
             }
             DBAction::Add(dictcc_db_path) => {
+                // TODO: add spinner and status
+
                 controller.add_dict(dictcc_db_path)?;
             }
             DBAction::Delete(dictcc_db_name) => {
