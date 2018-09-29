@@ -16,34 +16,35 @@ travis-ci = { repository = "kedeggel/dictcc-rust" }
 appveyor = { repository = "kedeggel/dictcc-rust" }
 
 [dependencies]
-csv = "1.0.0-beta.5"
-failure = "0.1.1"
+csv = "1.0.2"
+failure = "0.1.2"
 htmlescape = "0.3.1"
-serde = "1.0.32"
-serde_derive = "1.0.32"
-nom = "3.2.1"
-log = "0.4.1"
-regex = "0.2.7"
-prettytable-rs = "0.6.7"
-itertools = "0.7.7"
-colored = "1.6.0"
+serde = "1.0.79"
+serde_derive = "1.0.79"
+nom = "4.0.0"
+log = "0.4.5"
+regex = "1.0.5"
+prettytable-rs = "0.8.0"
+itertools = "0.7.8"
+colored = "1.6.1"
 dunce = "0.1.1"
-termcolor = "0.3.5"
+termcolor = "1.0.4"
 
 # CLI Depedencies
-structopt = { version = "0.2.5", optional = true }
-structopt-derive = { version = "0.2.5", optional = true }
-app_dirs = { version = "1.1.1", optional = true }
-simplelog = { version = "0.5.0", optional = true }
-[target.'cfg(unix)'.dependencies]
-pager = "0.14.0"
+structopt = { version = "0.2.10", optional = true }
+structopt-derive = { version = "0.2.10", optional = true }
+app_dirs = { version = "1.2.1", optional = true }
+simplelog = { version = "0.5.2", optional = true }
 
 
 # sqlite
 [dependencies.rusqlite]
-version = "0.13.0"
+version = "0.14.0"
 features = ["bundled"]
 optional = true
+
+[target.'cfg(unix)'.dependencies]
+pager = "0.15.0"
 
 
 [features]
